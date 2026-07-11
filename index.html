@@ -6,14 +6,14 @@
 <title>Vidraçaria - Faça seu Pedido</title>
 <style>
   :root {
-    --bg: #c9f7db;
+    --bg: #FAFAF8;
     --bg-card: #FFFFFF;
-    --border: #c9f7db;
+    --border: #E4E1DA;
     --text: #232323;
     --text-muted: #6B6B63;
     --accent: #1B6B3C;      /* verde da logo DFA */
     --accent-dark: #14512D;
-    --accent-light: #c9f7db;
+    --accent-light: #E7F3EB;
     --azul: #1F4E8C;        /* azul da logo DFA, usado em detalhes/preço */
     --danger: #C0392B;
     --radius: 10px;
@@ -267,6 +267,32 @@
   }
 
   .recom-track::-webkit-scrollbar { display: none; }
+
+  .recom-track-wrap {
+    position: relative;
+  }
+
+  .recom-seta {
+    position: absolute;
+    top: 40px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 15px;
+    color: var(--text);
+    z-index: 5;
+  }
+
+  .recom-seta:hover { border-color: var(--accent); }
+  .recom-seta.esquerda { left: -4px; }
+  .recom-seta.direita { right: -4px; }
 
   .recom-card {
     position: relative;
@@ -546,6 +572,10 @@
     border-color: var(--accent);
   }
 
+  .campo input.campo-texto {
+    font-size: 15px;
+  }
+
   .dica-medida {
     display: flex;
     gap: 8px;
@@ -744,11 +774,13 @@
     color: var(--danger);
   }
 </style>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
 <body>
 
 <header>
-  <img class="logo" src="img/logo.jpeg" alt="DFA Vidros" onerror="this.style.display='none'">
+  <img class="logo" src="img/logo.jpeg" alt="DFA Vidros Silvio" onerror="this.style.display='none'">
   <div>
     <h1>DFA Vidros Silvio</h1>
     <p>Escolha o vidro, informe a medida e receba o preço na hora</p>
@@ -787,7 +819,11 @@
     <div class="recom-bloco">
       <div class="recom-titulo">Você também pode gostar</div>
       <div class="recom-subtitulo">Modelos especiais sob medida — box, espelhos e guarda-corpo</div>
-      <div class="recom-track" id="recomTrack"></div>
+      <div class="recom-track-wrap">
+        <button class="recom-seta esquerda" id="recomSetaEsquerda" aria-label="Anterior">‹</button>
+        <div class="recom-track" id="recomTrack"></div>
+        <button class="recom-seta direita" id="recomSetaDireita" aria-label="Próximo">›</button>
+      </div>
       <div class="recom-aviso" id="recomAviso">
         <span>💬</span>
         <span>Gostou de algum modelo? Peça ao profissional que for te atender para passar os dados pra produção, ou fale com a gente agora: estamos prontos pra tirar sua dúvida! <a id="linkWhatsappRecom" href="#" target="_blank" rel="noopener">Falar no WhatsApp</a></span>
@@ -830,9 +866,29 @@
     <div id="acessoriosList"></div>
   </div>
 
-  <!-- ETAPA 4: Forma de pagamento -->
+  <!-- ETAPA 4: Dados do cliente -->
   <div class="step">
     <span class="step-label">Passo 4</span>
+    <h2>Seus dados</h2>
+    <div class="medidas-row">
+      <div class="campo">
+        <label for="inputNome">Nome *</label>
+        <input type="text" id="inputNome" class="campo-texto" placeholder="Seu nome completo">
+      </div>
+      <div class="campo">
+        <label for="inputTelefone">Telefone / WhatsApp *</label>
+        <input type="tel" id="inputTelefone" class="campo-texto" placeholder="(31) 90000-0000" inputmode="tel">
+      </div>
+    </div>
+    <div class="campo">
+      <label for="inputEndereco">Endereço para entrega ou retirada (opcional)</label>
+      <input type="text" id="inputEndereco" class="campo-texto" placeholder="Rua, número, bairro, cidade">
+    </div>
+  </div>
+
+  <!-- ETAPA 5: Forma de pagamento -->
+  <div class="step">
+    <span class="step-label">Passo 5</span>
     <h2>Forma de pagamento</h2>
     <div class="pagamento-grid" id="pagamentoGrid"></div>
     <div id="avisoPagamento" style="font-size:12.5px; color: var(--text-muted); margin-top:10px; display:none;"></div>
@@ -866,27 +922,24 @@
   </div>
 </div>
 
-<!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-
 <script>
 /* =========================================================
    CONFIG - PREENCHER COM OS DADOS REAIS
    ========================================================= */
 
-// TODO Luciano: cole aqui a config do projeto Firebase
-// (a mesma estrutura que você já usa no Luar do Viena)
+// TODO_FIREBASE_CONFIG Luciano: cola aqui o config do seu projeto Firebase
+// (Console Firebase > Configurações do projeto > Seus apps > SDK). Precisa
+// ser um Realtime Database (não Firestore) - os campos abaixo são o formato
+// exato que o console te entrega, só substituir os valores.
 const firebaseConfig = {
-  apiKey: "SUA_API_KEY",
-  authDomain: "SEU_PROJETO.firebaseapp.com",
-  databaseURL: "https://SEU_PROJETO-default-rtdb.firebaseio.com",
-  projectId: "SEU_PROJETO",
-  storageBucket: "SEU_PROJETO.appspot.com",
-  messagingSenderId: "SEU_SENDER_ID",
-  appId: "SEU_APP_ID"
+  apiKey: "AIzaSyDkUcB6nEV8MbHus-O4onbd_0GNtxTYddw",
+  authDomain: "dfa-vidros-silvio.firebaseapp.com",
+  databaseURL: "https://dfa-vidros-silvio-default-rtdb.firebaseio.com",
+  projectId: "dfa-vidros-silvio",
+  storageBucket: "dfa-vidros-silvio.firebasestorage.app",
+  messagingSenderId: "438096473976",
+  appId: "1:438096473976:web:3d9f24fb8d02193284228d"
 };
-
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
@@ -949,6 +1002,7 @@ const estado = {
   altura: 0,
   largura: 0,
   acessorios: {}, // { id: qtd }
+  cliente: { nome: "", telefone: "", endereco: "" },
   formaPagamento: null // "pix" | "cartao" | "dinheiro"
 };
 
@@ -1074,6 +1128,14 @@ function mostrarAvisoRecom() {
   recomAviso.classList.add("destaque");
   setTimeout(() => recomAviso.classList.remove("destaque"), 1600);
 }
+
+document.getElementById("recomSetaEsquerda").addEventListener("click", () => {
+  recomTrack.scrollBy({ left: -320, behavior: "smooth" });
+});
+
+document.getElementById("recomSetaDireita").addEventListener("click", () => {
+  recomTrack.scrollBy({ left: 320, behavior: "smooth" });
+});
 
 renderRecomendados();
 
@@ -1296,7 +1358,9 @@ function atualizarTudo() {
   precoTotalGrande.textContent = totalFmt;
   precoTotalBarra.textContent = totalFmt;
 
-  const pedidoValido = estado.vidroSelecionado && estado.altura > 0 && estado.largura > 0 && estado.formaPagamento;
+  const pedidoValido = estado.vidroSelecionado && estado.altura > 0 && estado.largura > 0
+    && estado.cliente.nome.trim() && estado.cliente.telefone.trim()
+    && estado.formaPagamento;
   btnFinalizar.disabled = !pedidoValido;
 }
 
@@ -1312,6 +1376,24 @@ document.getElementById("inputAltura").addEventListener("input", (e) => {
 document.getElementById("inputLargura").addEventListener("input", (e) => {
   estado.largura = parseFloat(e.target.value) || 0;
   atualizarTudo();
+});
+
+/* =========================================================
+   EVENTOS - DADOS DO CLIENTE
+   ========================================================= */
+
+document.getElementById("inputNome").addEventListener("input", (e) => {
+  estado.cliente.nome = e.target.value;
+  atualizarTudo();
+});
+
+document.getElementById("inputTelefone").addEventListener("input", (e) => {
+  estado.cliente.telefone = e.target.value;
+  atualizarTudo();
+});
+
+document.getElementById("inputEndereco").addEventListener("input", (e) => {
+  estado.cliente.endereco = e.target.value;
 });
 
 /* =========================================================
@@ -1339,21 +1421,58 @@ async function gerarLinkPagamento(pedido) {
 }
 
 /* =========================================================
-   FINALIZAR PEDIDO -> GRAVA NO FIREBASE
-   Estrutura combinada: nó pedidos_producao, pronto pro
-   programa de produção consumir via listener.
+   FINALIZAR PEDIDO -> ENVIA PRA API FLASK (api.py)
+   Formato dos itens (productType + config) é o MESMO que o
+   dfa_sistema.py já espera (função format_config_lines), pra
+   aparecer certinho na produção: corte, espessura, modelo etc.
    ========================================================= */
 
 const msgStatus = document.getElementById("msgStatus");
 
+function montarItemVidro(total) {
+  const areaM2 = (estado.altura / 100) * (estado.largura / 100);
+  return {
+    id: "ci_" + Date.now().toString(36),
+    productId: estado.vidroSelecionado.id,
+    productName: estado.vidroSelecionado.nome,
+    productCat: "vidros",
+    productType: "glass",
+    config: {
+      // dfa_sistema.py trabalha as medidas em milímetros
+      width: Math.round(estado.largura * 10),
+      height: Math.round(estado.altura * 10),
+      thickness: estado.vidroSelecionado.espessura_mm,
+      color: "incolor",
+      finish: "",
+      cuts: 0,
+      holes: 0
+    },
+    unit: "m2",
+    qty: 1,
+    area_m2: areaM2,
+    subtotal: areaM2 * estado.vidroSelecionado.preco_m2,
+    weight: 0
+  };
+}
+
 function montarItensAcessorios() {
   return ACESSORIOS
     .filter(a => (estado.acessorios[a.id] || 0) > 0)
-    .map(a => ({
-      nome: a.nome,
-      qtd: estado.acessorios[a.id],
-      preco_unitario: a.preco_unit
-    }));
+    .map(a => {
+      const qtd = estado.acessorios[a.id];
+      return {
+        id: "ci_" + a.id + "_" + Date.now().toString(36),
+        productId: a.id,
+        productName: a.nome,
+        productCat: "acessorios",
+        productType: "acessorio",
+        config: {},
+        unit: "un",
+        qty: qtd,
+        subtotal: qtd * a.preco_unit,
+        weight: 0
+      };
+    });
 }
 
 async function finalizarPedido() {
@@ -1361,40 +1480,36 @@ async function finalizarPedido() {
   btnFinalizar.textContent = "Enviando...";
 
   const { total } = calcularPreco();
-  const orientacao = estado.altura >= estado.largura ? "em_pe" : "deitado";
-  const formaSelecionada = FORMAS_PAGAMENTO.find(f => f.id === estado.formaPagamento);
+  const agora = new Date().toISOString();
 
   const pedido = {
-    status: "novo",
-    // pedidos no cartão ficam "aguardando_pagamento" até o gateway confirmar;
-    // pix e dinheiro entram direto como "novo" (produção já pode ver)
-    status_pagamento: formaSelecionada.requer_link ? "aguardando_pagamento" : "nao_aplicavel",
-    criado_em: Date.now(),
-    itens: [
-      {
-        item_id: "001",
-        tipo_vidro: estado.vidroSelecionado.id,
-        nome_vidro: estado.vidroSelecionado.nome,
-        espessura_mm: estado.vidroSelecionado.espessura_mm,
-        altura_cm: estado.altura,
-        largura_cm: estado.largura,
-        orientacao: orientacao,
-        acessorios: montarItensAcessorios(),
-        preco_unitario: total
-      }
-    ],
-    preco_total: total,
-    forma_pagamento: estado.formaPagamento,
-    observacoes: ""
+    id: "PED-" + Date.now().toString(36).toUpperCase(),
+    date: agora,
+    name: estado.cliente.nome.trim(),
+    phone: estado.cliente.telefone.trim(),
+    addr: estado.cliente.endereco.trim(),
+    doc: "", email: "", cep: "", num: "", bairro: "", city: "",
+    complemento: "", reference: "", pref_date: "",
+    obs: "",
+    delivery: estado.cliente.endereco.trim() ? "entrega" : "retirada",
+    payment: estado.formaPagamento,
+    items: [montarItemVidro(total), ...montarItensAcessorios()],
+    totals: { subtotal: total, volumeDiscount: 0, delivery: 0, total: total },
+    status: "recebido",
+    statusHistory: [{ status: "recebido", at: agora }],
+    isPro: false,
+    customerId: ""
   };
 
   try {
-    const novoRef = db.ref("pedidos_producao").push();
-    await novoRef.set(pedido);
+    // Grava o pedido no Realtime Database em /pedidos/{id}. O painel da
+    // loja (dfa-admin.html) escuta esse mesmo nó em tempo real.
+    await db.ref("pedidos/" + pedido.id).set(pedido);
 
+    const formaSelecionada = FORMAS_PAGAMENTO.find(f => f.id === estado.formaPagamento);
     if (formaSelecionada.requer_link) {
       // cartão: gera o link de pagamento e redireciona o cliente
-      const checkoutUrl = await gerarLinkPagamento({ ...pedido, _id: novoRef.key });
+      const checkoutUrl = await gerarLinkPagamento(pedido);
       if (checkoutUrl) {
         msgStatus.className = "msg-status ok";
         msgStatus.textContent = "Redirecionando para o pagamento...";
@@ -1410,11 +1525,11 @@ async function finalizarPedido() {
     }
 
     msgStatus.className = "msg-status ok";
-    msgStatus.textContent = "Pedido enviado! Nº " + novoRef.key.slice(-6).toUpperCase();
+    msgStatus.textContent = "Pedido enviado! Nº " + pedido.id;
     btnFinalizar.textContent = "Pedido enviado ✓";
   } catch (err) {
     msgStatus.className = "msg-status erro";
-    msgStatus.textContent = "Não foi possível enviar o pedido. Tente novamente.";
+    msgStatus.textContent = "Não foi possível enviar o pedido. Confira sua conexão com a internet e tente de novo.";
     btnFinalizar.disabled = false;
     btnFinalizar.textContent = "Finalizar pedido";
     console.error(err);
