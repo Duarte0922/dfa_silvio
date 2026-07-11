@@ -1,0 +1,1570 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DFA Vidraçaria — Painel da Loja</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<style>
+  :root {
+    --bg: #FAFAF8;
+    --bg-card: #FFFFFF;
+    --bg-side: #1D2B22;
+    --bg-side-hover: #27392E;
+    --border: #E4E1DA;
+    --text: #232323;
+    --text-muted: #6B6B63;
+    --accent: #1B6B3C;
+    --accent-dark: #14512D;
+    --accent-light: #E7F3EB;
+    --azul: #1F4E8C;
+    --danger: #C0392B;
+    --amarelo: #C9821A;
+    --radius: 10px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+
+    --status-recebido: #1F4E8C;
+    --status-em_producao: #C9821A;
+    --status-pronto: #1B6B3C;
+    --status-entregue: #6B6B63;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.4;
+  }
+
+  .layout { display: flex; min-height: 100vh; }
+
+  /* --- Sidebar --- */
+  .sidebar {
+    width: 230px;
+    flex-shrink: 0;
+    background: var(--bg-side);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    padding: 22px 0;
+  }
+
+  .sidebar .marca {
+    padding: 0 20px 18px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    margin-bottom: 10px;
+  }
+
+  .sidebar .marca .nome {
+    font-size: 17px;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .sidebar .marca .sub {
+    font-size: 12px;
+    color: rgba(255,255,255,0.55);
+    margin-top: 2px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 20px;
+    font-size: 14px;
+    color: rgba(255,255,255,0.85);
+    cursor: pointer;
+    border-left: 3px solid transparent;
+    user-select: none;
+  }
+
+  .nav-item:hover { background: var(--bg-side-hover); }
+
+  .nav-item.ativo {
+    background: var(--bg-side-hover);
+    border-left-color: var(--accent);
+    color: #fff;
+    font-weight: 600;
+  }
+
+  .nav-item.desabilitado {
+    opacity: 0.4;
+    cursor: default;
+  }
+
+  .nav-item.desabilitado:hover { background: transparent; }
+
+  .sidebar .versao {
+    margin-top: auto;
+    padding: 14px 20px 0;
+    font-size: 11px;
+    color: rgba(255,255,255,0.35);
+  }
+
+  /* --- Conteúdo --- */
+  .content { flex: 1; padding: 26px 30px; max-width: 1280px; }
+
+  .content h1 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+  }
+
+  .content .subt {
+    margin: 3px 0 20px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  .view { display: none; }
+  .view.ativa { display: block; }
+
+  /* --- Cards de métrica --- */
+  .cards-metricas {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin-bottom: 26px;
+  }
+
+  .metrica {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 16px 18px;
+  }
+
+  .metrica .rotulo {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .metrica .valor {
+    font-size: 26px;
+    font-weight: 700;
+    margin-top: 6px;
+    color: var(--accent-dark);
+  }
+
+  .metrica .valor.danger { color: var(--danger); }
+
+  /* --- Pipeline --- */
+  h2.secao {
+    font-size: 15px;
+    font-weight: 700;
+    margin: 26px 0 12px;
+  }
+
+  .pipeline {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+
+  .pipe-card {
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    color: #fff;
+  }
+
+  .pipe-card .rotulo { font-size: 13px; font-weight: 700; }
+  .pipe-card .valor { font-size: 24px; font-weight: 700; margin-top: 4px; }
+
+  /* --- Lista últimos pedidos (dashboard) --- */
+  .lista-simples {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+
+  .lista-simples .linha {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+
+  .lista-simples .linha:last-child { border-bottom: none; }
+  .lista-simples .linha .id { color: var(--accent-dark); font-weight: 700; width: 110px; flex-shrink: 0; }
+  .lista-simples .linha .nome { flex: 1; }
+  .lista-simples .linha .total { font-weight: 700; color: var(--accent-dark); }
+
+  .badge-status {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 20px;
+    color: #fff;
+  }
+
+  /* --- View Pedidos --- */
+  .pedidos-toolbar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+
+  .pedidos-toolbar input, .pedidos-toolbar select {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-family: inherit;
+    background: var(--bg-card);
+    color: var(--text);
+  }
+
+  .pedidos-toolbar input { flex: 1; min-width: 180px; }
+
+  .pedidos-body {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .pedidos-lista {
+    width: 360px;
+    flex-shrink: 0;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    max-height: 72vh;
+    overflow-y: auto;
+  }
+
+  .pedido-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+  }
+
+  .pedido-item:last-child { border-bottom: none; }
+  .pedido-item:hover { background: var(--accent-light); }
+  .pedido-item.selecionado { background: var(--accent-light); border-left: 3px solid var(--accent); }
+
+  .pedido-item .topo { display: flex; justify-content: space-between; font-size: 13px; font-weight: 700; }
+  .pedido-item .cliente { font-size: 12.5px; color: var(--text-muted); margin-top: 2px; }
+  .pedido-item .hora { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+  .pedido-detalhe {
+    flex: 1;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 22px;
+    min-height: 300px;
+  }
+
+  .pedido-detalhe .vazio { color: var(--text-muted); text-align: center; padding: 60px 0; font-size: 14px; }
+
+  .det-topo { display: flex; justify-content: space-between; align-items: center; }
+  .det-topo h3 { margin: 0; font-size: 18px; }
+  .det-hora { font-size: 12px; color: var(--text-muted); margin: 3px 0 18px; }
+
+  .det-secao {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    margin: 18px 0 6px;
+  }
+
+  .item-card {
+    background: var(--accent-light);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 6px;
+  }
+
+  .item-card .nome-item { font-weight: 700; font-size: 13.5px; }
+  .item-card .linha-conf { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .item-card .subtotal { text-align: right; font-size: 12.5px; color: var(--accent-dark); font-weight: 700; margin-top: 4px; }
+
+  .det-total { font-size: 22px; font-weight: 700; margin-top: 6px; }
+
+  .det-acoes { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+
+  .btn {
+    border: none;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 13.5px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  .btn-primario { background: var(--accent); color: #fff; }
+  .btn-primario:hover { background: var(--accent-dark); }
+  .btn-secundario { background: var(--bg); border: 1px solid var(--border); color: var(--text); }
+  .btn-secundario:hover { border-color: var(--accent); }
+
+  .placeholder-view {
+    background: var(--bg-card);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 60px 20px;
+    text-align: center;
+    color: var(--text-muted);
+  }
+
+  .alerta-config {
+    background: #FBEEE0;
+    border: 1px solid #E8C79A;
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    color: #7A4A0E;
+  }
+
+  .topo-view { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
+  .input-largo {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: 13px;
+    font-family: inherit;
+    margin: 12px 0 16px;
+  }
+
+  /* --- Kanban (Produção) --- */
+  .kanban { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; align-items: start; }
+  .kanban-col { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .kanban-col .cabecalho { padding: 10px 12px; font-weight: 700; font-size: 13px; color: #fff; }
+  .kanban-col .corpo { padding: 8px; min-height: 60px; }
+  .kanban-card { background: var(--accent-light); border-radius: 8px; padding: 10px; margin-bottom: 8px; }
+  .kanban-card .id { font-weight: 700; color: var(--accent-dark); font-size: 13px; }
+  .kanban-card .nome { font-size: 12.5px; margin-top: 2px; }
+  .kanban-card .itens { font-size: 11.5px; color: var(--text-muted); margin-top: 3px; }
+  .kanban-card button { width: 100%; margin-top: 8px; }
+  .kanban-vazio { text-align: center; color: var(--text-muted); font-size: 12px; padding: 14px 0; }
+
+  /* --- Formulários (Nova Venda, modais) --- */
+  .form-venda { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 22px; max-width: 720px; }
+  .linha-form { display: flex; gap: 14px; margin-bottom: 4px; flex-wrap: wrap; }
+  .campo { flex: 1; min-width: 160px; display: flex; flex-direction: column; gap: 4px; }
+  .campo label { font-size: 12px; color: var(--text-muted); font-weight: 600; }
+  .campo input, .campo select { border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 13.5px; font-family: inherit; }
+
+  /* --- Autocomplete (cliente / produto) --- */
+  .autocomplete-wrap { position: relative; }
+  .autocomplete-list {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    max-height: 220px;
+    overflow-y: auto;
+    z-index: 30;
+    margin-top: 3px;
+  }
+  .autocomplete-list.aberta { display: block; }
+  .autocomplete-item { padding: 8px 12px; cursor: pointer; font-size: 13px; border-bottom: 1px solid var(--border); }
+  .autocomplete-item:last-child { border-bottom: none; }
+  .autocomplete-item:hover, .autocomplete-item.destaque { background: var(--accent-light); }
+  .autocomplete-item .principal { font-weight: 600; }
+  .autocomplete-item .secundario { font-size: 11.5px; color: var(--text-muted); margin-top: 1px; }
+  .autocomplete-vazio { padding: 10px 12px; font-size: 12.5px; color: var(--text-muted); }
+
+  .aviso-cliente { font-size: 12.5px; padding: 8px 12px; border-radius: 8px; margin: -4px 0 14px; }
+  .aviso-cliente.existente { background: var(--accent-light); color: var(--accent-dark); }
+  .aviso-cliente.novo { background: #FBEEE0; color: #7A4A0E; }
+
+  /* --- Item de venda com produto pesquisável --- */
+  .item-venda-row { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 8px; }
+  .item-venda-row input { border: 1px solid var(--border); border-radius: 8px; padding: 7px 9px; font-size: 13px; font-family: inherit; }
+  .item-venda-row .campo-produto { flex: 2; position: relative; }
+  .item-venda-row input.nome-i { width: 100%; box-sizing: border-box; }
+  .item-venda-row .qtd-i { width: 70px; }
+  .item-venda-row .preco-i { width: 100px; }
+  .item-venda-row .unid-i { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .item-venda-row .rm { background: none; border: none; color: var(--danger); cursor: pointer; font-size: 16px; }
+
+
+  /* --- Relatórios --- */
+  .periodo-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px 18px; margin-bottom: 22px; }
+  .periodo-box > label { font-weight: 700; font-size: 13.5px; }
+  .atalhos-periodo { margin-top: 10px; font-size: 12.5px; color: var(--text-muted); display: flex; gap: 8px; align-items: center; }
+  .btn-atalho { border: 1px solid var(--border); background: var(--bg); border-radius: 6px; padding: 4px 10px; font-size: 12px; cursor: pointer; }
+  .btn-atalho:hover { border-color: var(--accent); }
+
+  .cards-relatorio { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 22px; }
+  .card-relatorio { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; }
+  .card-relatorio h3 { margin: 0 0 4px; font-size: 14.5px; }
+  .card-relatorio p { margin: 0 0 12px; font-size: 12.5px; color: var(--text-muted); }
+
+  /* --- Modal --- */
+  .modal-fundo { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); align-items: center; justify-content: center; z-index: 50; }
+  .modal-fundo.ativo { display: flex; }
+  .modal-caixa { background: var(--bg-card); border-radius: var(--radius); padding: 24px; width: 520px; max-width: 92vw; max-height: 88vh; overflow-y: auto; }
+  .modal-caixa h3 { margin-top: 0; }
+  .modal-acoes { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
+  .link-box { display: flex; gap: 8px; margin-top: 12px; }
+  .link-box input { flex: 1; border: 1px solid var(--border); border-radius: 8px; padding: 9px 12px; font-size: 13px; }
+
+  @media (max-width: 900px) {
+    .kanban { grid-template-columns: repeat(2, 1fr); }
+    .pedidos-body { flex-direction: column; }
+    .pedidos-lista { width: 100%; max-height: 260px; }
+    .pipeline { grid-template-columns: repeat(2, 1fr); }
+  }
+  /* --- Impressão: só a ficha do pedido, sem menu/sidebar --- */
+  @media print {
+    body * { visibility: hidden; }
+    #detalhePedido, #detalhePedido * { visibility: visible; }
+    #detalhePedido {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      border: none;
+      box-shadow: none;
+      padding: 0;
+    }
+    #detalhePedido .det-acoes { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <nav class="sidebar">
+    <div class="marca">
+      <div class="nome">DFA Vidraçaria</div>
+      <div class="sub">Painel da loja</div>
+    </div>
+    <div class="nav-item ativo" data-view="dashboard">📊 Dashboard</div>
+    <div class="nav-item" data-view="pedidos">📋 Pedidos</div>
+    <div class="nav-item" data-view="clientes">👥 Clientes</div>
+    <div class="nav-item" data-view="venda">🛒 Nova Venda</div>
+    <div class="nav-item" data-view="producao">🏭 Produção</div>
+    <div class="nav-item" data-view="estoque">📦 Estoque</div>
+    <div class="nav-item" data-view="relatorios">📈 Relatórios</div>
+    <div class="nav-item" id="btnLinkCliente">🔗 Link p/ clientes</div>
+    <div class="versao">v2.0 · Sistema completo (Firebase)</div>
+  </nav>
+
+  <main class="content">
+
+    <div id="avisoConfig" class="alerta-config" style="display:none;">
+      ⚠️ Preencha o <code>firebaseConfig</code> no topo do script antes de usar o painel.
+    </div>
+
+    <!-- ===================== DASHBOARD ===================== -->
+    <section class="view ativa" id="view-dashboard">
+      <h1>Dashboard</h1>
+      <p class="subt">Visão geral do dia</p>
+
+      <div class="cards-metricas">
+        <div class="metrica"><div class="rotulo">Total de pedidos</div><div class="valor" id="mTotal">0</div></div>
+        <div class="metrica"><div class="rotulo">Em produção</div><div class="valor" id="mEmProducao">0</div></div>
+        <div class="metrica"><div class="rotulo">Prontos p/ entrega</div><div class="valor" id="mProntos">0</div></div>
+        <div class="metrica"><div class="rotulo">Faturamento</div><div class="valor" id="mFaturamento">R$ 0,00</div></div>
+        <div class="metrica"><div class="rotulo">Clientes</div><div class="valor" id="mClientes">0</div></div>
+      </div>
+
+      <h2 class="secao">Pipeline de produção</h2>
+      <div class="pipeline" id="pipeline"></div>
+
+      <h2 class="secao">Últimos pedidos</h2>
+      <div class="lista-simples" id="ultimosPedidos"></div>
+    </section>
+
+    <!-- ===================== PEDIDOS ===================== -->
+    <section class="view" id="view-pedidos">
+      <h1>Pedidos</h1>
+      <p class="subt">Fila geral — atualiza em tempo real</p>
+
+      <div class="pedidos-toolbar">
+        <input type="text" id="buscaPedido" placeholder="Buscar por nome ou nº do pedido...">
+        <select id="filtroStatus">
+          <option value="">Todos os status</option>
+          <option value="recebido">Recebido</option>
+          <option value="em_producao">Em produção</option>
+          <option value="pronto">Pronto</option>
+          <option value="entregue">Entregue</option>
+        </select>
+      </div>
+
+      <div class="pedidos-body">
+        <div class="pedidos-lista" id="listaPedidos"></div>
+        <div class="pedido-detalhe" id="detalhePedido">
+          <div class="vazio">Selecione um pedido na lista</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== CLIENTES ===================== -->
+    <section class="view" id="view-clientes">
+      <div class="topo-view">
+        <div><h1>Clientes</h1><p class="subt">Cadastro e histórico de compras</p></div>
+        <button class="btn btn-primario" id="btnNovoCliente">+ Novo cliente</button>
+      </div>
+      <input type="text" id="buscaCliente" class="input-largo" placeholder="Buscar por nome ou telefone...">
+      <div class="pedidos-body">
+        <div class="pedidos-lista" id="listaClientes"></div>
+        <div class="pedido-detalhe" id="detalheCliente"><div class="vazio">Selecione um cliente</div></div>
+      </div>
+    </section>
+
+    <!-- ===================== NOVA VENDA ===================== -->
+    <section class="view" id="view-venda">
+      <h1>Nova Venda (balcão)</h1>
+      <p class="subt">Lançar venda rápida direto no caixa da loja</p>
+
+      <div class="form-venda">
+        <div class="linha-form">
+          <div class="campo autocomplete-wrap">
+            <label>Cliente *</label>
+            <input type="text" id="vCliNome" autocomplete="off" placeholder="Digite o nome...">
+            <div class="autocomplete-list" id="vCliLista"></div>
+          </div>
+          <div class="campo"><label>Telefone *</label><input type="text" id="vCliFone" placeholder="Preenche automático se já for cliente"></div>
+        </div>
+        <div id="vCliAviso" class="aviso-cliente" style="display:none;"></div>
+
+        <h2 class="secao">Itens</h2>
+        <div id="vItens"></div>
+        <button class="btn btn-secundario" id="btnAddItemVenda">+ Adicionar item</button>
+
+        <div class="linha-form" style="margin-top:18px;">
+          <div class="campo"><label>Forma de pagamento</label>
+            <select id="vPagamento">
+              <option value="pix">PIX</option>
+              <option value="cartao">Cartão</option>
+              <option value="boleto">Boleto</option>
+              <option value="faturado">Faturado (Pro)</option>
+            </select>
+          </div>
+          <div class="campo"><label>Total</label><div class="det-total" id="vTotal">R$ 0,00</div></div>
+        </div>
+
+        <button class="btn btn-primario" id="btnFinalizarVenda" style="margin-top:14px;">Finalizar venda</button>
+        <span id="vMsg" style="margin-left:12px;font-size:13px;color:var(--accent-dark);"></span>
+      </div>
+    </section>
+
+    <!-- ===================== PRODUÇÃO ===================== -->
+    <section class="view" id="view-producao">
+      <h1>Chão de Fábrica</h1>
+      <p class="subt">Pedidos por etapa de produção</p>
+      <button class="btn btn-primario" id="btnExportCorte" style="margin-bottom:14px;">⬇ Exportar peças p/ corte (CSV)</button>
+      <div class="kanban" id="kanban"></div>
+    </section>
+
+    <!-- ===================== ESTOQUE ===================== -->
+    <section class="view" id="view-estoque">
+      <div class="topo-view">
+        <div><h1>Controle de Estoque</h1><p class="subt">Produtos, insumos e alertas de mínimo</p></div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-secundario" id="btnEntradaEstoque">📥 Entrada de mercadoria</button>
+          <button class="btn btn-primario" id="btnNovoProduto">+ Novo produto</button>
+        </div>
+      </div>
+      <input type="text" id="buscaEstoque" class="input-largo" placeholder="Buscar produto...">
+      <div class="pedidos-body">
+        <div class="pedidos-lista" id="listaEstoque"></div>
+        <div class="pedido-detalhe" id="detalheEstoque"><div class="vazio">Selecione um produto</div></div>
+      </div>
+    </section>
+
+    <!-- ===================== RELATÓRIOS ===================== -->
+    <section class="view" id="view-relatorios">
+      <h1>Relatórios</h1>
+      <p class="subt">Exporte dados do período em CSV (abre no Excel)</p>
+
+      <div class="periodo-box">
+        <label>Período</label>
+        <div class="linha-form" style="align-items:flex-end;">
+          <div class="campo"><label>De</label><input type="date" id="rDataIni"></div>
+          <div class="campo"><label>Até</label><input type="date" id="rDataFim"></div>
+        </div>
+        <div class="atalhos-periodo">
+          <span>Atalhos:</span>
+          <button class="btn-atalho" data-dias="0">Hoje</button>
+          <button class="btn-atalho" data-dias="7">7 dias</button>
+          <button class="btn-atalho" data-dias="30">30 dias</button>
+          <button class="btn-atalho" data-dias="90">90 dias</button>
+        </div>
+      </div>
+
+      <div class="cards-relatorio">
+        <div class="card-relatorio">
+          <h3>📋 Vendas</h3>
+          <p>Lista de pedidos no período</p>
+          <button class="btn btn-secundario" id="btnExportVendas">⬇ Baixar CSV</button>
+        </div>
+        <div class="card-relatorio">
+          <h3>👥 Clientes</h3>
+          <p>Cadastro completo</p>
+          <button class="btn btn-secundario" id="btnExportClientes">⬇ Baixar CSV</button>
+        </div>
+        <div class="card-relatorio">
+          <h3>📦 Estoque</h3>
+          <p>Posição atual dos produtos</p>
+          <button class="btn btn-secundario" id="btnExportEstoque">⬇ Baixar CSV</button>
+        </div>
+      </div>
+
+      <h2 class="secao">Prévia do período</h2>
+      <div class="lista-simples" id="previewRelatorio"></div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ===== MODAL genérico (cliente / produto / entrada / link) ===== -->
+<div class="modal-fundo" id="modalFundo">
+  <div class="modal-caixa" id="modalCaixa"></div>
+</div>
+
+<script>
+/* =========================================================
+   CONFIG - PREENCHER COM OS DADOS REAIS
+   ========================================================= */
+
+// TODO_FIREBASE_CONFIG Luciano: mesmo config do vidracaria-app.html
+// (Console Firebase > Configurações do projeto > Seus apps > SDK).
+const firebaseConfig = {
+  apiKey: "AIzaSyDkUcB6nEV8MbHus-O4onbd_0GNtxTYddw",
+  authDomain: "dfa-vidros-silvio.firebaseapp.com",
+  databaseURL: "https://dfa-vidros-silvio-default-rtdb.firebaseio.com",
+  projectId: "dfa-vidros-silvio",
+  storageBucket: "dfa-vidros-silvio.firebasestorage.app",
+  messagingSenderId: "438096473976",
+  appId: "1:438096473976:web:3d9f24fb8d02193284228d"
+};
+
+if (firebaseConfig.apiKey === "COLE_AQUI") {
+  document.getElementById("avisoConfig").style.display = "block";
+}
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+/* =========================================================
+   CONSTANTES (mesmas regras do dfa_sistema.py)
+   ========================================================= */
+
+const STATUS_LABELS = {
+  recebido: "Recebido",
+  em_producao: "Em produção",
+  pronto: "Pronto",
+  entregue: "Entregue"
+};
+const STATUS_ORDER = ["recebido", "em_producao", "pronto", "entregue"];
+const STATUS_COR = {
+  recebido: "var(--status-recebido)",
+  em_producao: "var(--status-em_producao)",
+  pronto: "var(--status-pronto)",
+  entregue: "var(--status-entregue)"
+};
+const PAYMENT_LABELS = { pix: "PIX", cartao: "Cartão", boleto: "Boleto", faturado: "Faturado (Pro)" };
+
+// Mesmo catálogo do vidracaria-app.html (index.html), pra vender balcão com
+// o mesmo preço/produto que o cliente vê online. Se mudar um preço lá,
+// espelha aqui também.
+const CATALOGO_PRODUTOS = [
+  { nome: "Vidro Comum",     preco: 100.00, unidade: "m²" },
+  { nome: "Vidro Temperado", preco: 220.00, unidade: "m²" },
+  { nome: "Vidro Laminado",  preco: 300.00, unidade: "m²" },
+  { nome: "Vidro Canelado",  preco: 120.00, unidade: "m²" },
+  { nome: "Vidro Martelado", preco: 120.00, unidade: "m²" },
+  { nome: "Box Abrir",       preco: 350.00, unidade: "m²" },
+  { nome: "Box Articulado",  preco: 420.00, unidade: "m²" },
+  { nome: "Box Canto",       preco: 380.00, unidade: "m²" },
+  { nome: "Box Correr",      preco: 360.00, unidade: "m²" },
+  { nome: "Box Elegance",    preco: 480.00, unidade: "m²" },
+  { nome: "Box Flex",        preco: 450.00, unidade: "m²" },
+  { nome: "Box Frontal",     preco: 370.00, unidade: "m²" },
+  { nome: "Box Teto",        preco: 500.00, unidade: "m²" },
+  { nome: "Espelho Comum",         preco: 130.00, unidade: "m²" },
+  { nome: "Espelho Decorativo",    preco: 220.00, unidade: "m²" },
+  { nome: "Espelho Lapidado",      preco: 180.00, unidade: "m²" },
+  { nome: "Espelho Sob Medida",    preco: 200.00, unidade: "m²" },
+  { nome: "Guarda-Corpo",    preco: 340.00, unidade: "m²" },
+  { nome: "Puxador Concha",   preco: 28.00, unidade: "un" },
+  { nome: "Puxador H",        preco: 45.00, unidade: "un" },
+  { nome: "Roldana Superior", preco: 22.00, unidade: "un" },
+  { nome: "Roldana Inferior", preco: 22.00, unidade: "un" },
+  { nome: "Dobradiça",        preco: 32.00, unidade: "un" },
+  { nome: "Silicone",         preco: 18.00, unidade: "un" },
+  { nome: "Vedação",          preco: 15.00, unidade: "un" },
+  { nome: "Fechamento de Pia", preco: 60.00, unidade: "un" },
+];
+
+// Produtos avulsos que foram digitados manualmente em vendas anteriores
+// (não estavam no catálogo fixo). Ficam salvos no Firebase pra aparecer
+// na busca das próximas vendas também.
+let catalogoExtra = [];
+db.ref("catalogoExtra").on("value", (snap) => {
+  const val = snap.val() || {};
+  catalogoExtra = Object.values(val);
+});
+
+function catalogoCompleto() {
+  return [...CATALOGO_PRODUTOS, ...catalogoExtra];
+}
+
+
+function proximoStatus(atual) {
+  const i = STATUS_ORDER.indexOf(atual);
+  return i >= 0 && i + 1 < STATUS_ORDER.length ? STATUS_ORDER[i + 1] : null;
+}
+
+function fmtBR(valor) {
+  return "R$ " + (valor || 0).toFixed(2).replace(".", ",");
+}
+
+function fmtHora(iso) {
+  if (!iso) return "-";
+  const d = new Date(iso);
+  return d.toLocaleDateString("pt-BR") + " " + d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+}
+
+function formatConfigLines(item) {
+  const conf = item.config || {};
+  const tipo = item.productType || "";
+  const linhas = [];
+  if (tipo === "glass" || tipo === "mirror") {
+    if (conf.width && conf.height) linhas.push(`Medidas: ${conf.width} x ${conf.height} mm`);
+    if (conf.thickness) linhas.push(`Espessura: ${conf.thickness} mm`);
+    if (conf.color) linhas.push(`Cor: ${conf.color}`);
+    if (conf.finish) linhas.push(`Acabamento: ${conf.finish}`);
+    if (conf.cuts) linhas.push(`Recortes: ${conf.cuts}`);
+    if (conf.holes) linhas.push(`Furos: ${conf.holes}`);
+  } else if (tipo === "box") {
+    if (conf.width && conf.height) linhas.push(`Medidas do nicho: ${conf.width} x ${conf.height} mm`);
+    if (conf.side) linhas.push(`Abertura: ${conf.side}`);
+    if (conf.color) linhas.push(`Acabamento: ${conf.color}`);
+  }
+  if (conf.obs) linhas.push(`Obs: ${conf.obs}`);
+  return linhas;
+}
+
+/* =========================================================
+   NAVEGAÇÃO
+   ========================================================= */
+
+document.querySelectorAll(".nav-item[data-view]").forEach(el => {
+  el.addEventListener("click", () => {
+    document.querySelectorAll(".nav-item[data-view]").forEach(n => n.classList.remove("ativo"));
+    el.classList.add("ativo");
+    document.querySelectorAll(".view").forEach(v => v.classList.remove("ativa"));
+    document.getElementById("view-" + el.dataset.view).classList.add("ativa");
+  });
+});
+
+/* =========================================================
+   ESTADO GLOBAL (sincronizado do Firebase)
+   ========================================================= */
+
+let pedidos = {};      // { id: pedidoObj }
+let pedidoSelecionadoId = null;
+
+db.ref("pedidos").on("value", (snap) => {
+  pedidos = snap.val() || {};
+  renderDashboard();
+  renderListaPedidos();
+  if (pedidoSelecionadoId) renderDetalhePedido(pedidos[pedidoSelecionadoId]);
+});
+
+function listaPedidosArray() {
+  return Object.values(pedidos).sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+}
+
+/* =========================================================
+   DASHBOARD
+   ========================================================= */
+
+function renderDashboard() {
+  const lista = listaPedidosArray();
+  const total = lista.length;
+  const emProducao = lista.filter(p => p.status === "em_producao").length;
+  const prontos = lista.filter(p => p.status === "pronto").length;
+  const faturamento = lista.reduce((s, p) => s + (p.totals?.total || 0), 0);
+  const clientes = new Set(lista.map(p => p.phone).filter(Boolean)).size;
+
+  document.getElementById("mTotal").textContent = total;
+  document.getElementById("mEmProducao").textContent = emProducao;
+  document.getElementById("mProntos").textContent = prontos;
+  document.getElementById("mFaturamento").textContent = fmtBR(faturamento);
+  document.getElementById("mClientes").textContent = clientes;
+
+  const pipeline = document.getElementById("pipeline");
+  pipeline.innerHTML = STATUS_ORDER.map(st => {
+    const count = lista.filter(p => p.status === st).length;
+    return `<div class="pipe-card" style="background:${STATUS_COR[st]}">
+      <div class="rotulo">${STATUS_LABELS[st]}</div>
+      <div class="valor">${count}</div>
+    </div>`;
+  }).join("");
+
+  const ultimos = document.getElementById("ultimosPedidos");
+  const top8 = lista.slice(0, 8);
+  ultimos.innerHTML = top8.length
+    ? top8.map(p => `
+      <div class="linha">
+        <span class="id">${p.id}</span>
+        <span class="nome">${p.name || "-"}</span>
+        <span class="badge-status" style="background:${STATUS_COR[p.status] || '#999'}">${STATUS_LABELS[p.status] || p.status}</span>
+        <span class="total">${fmtBR(p.totals?.total)}</span>
+      </div>`).join("")
+    : `<div class="linha" style="color:var(--text-muted);">Nenhum pedido ainda</div>`;
+}
+
+/* =========================================================
+   PEDIDOS - LISTA
+   ========================================================= */
+
+document.getElementById("buscaPedido").addEventListener("input", renderListaPedidos);
+document.getElementById("filtroStatus").addEventListener("change", renderListaPedidos);
+
+function renderListaPedidos() {
+  const busca = document.getElementById("buscaPedido").value.trim().toLowerCase();
+  const filtro = document.getElementById("filtroStatus").value;
+
+  let lista = listaPedidosArray();
+  if (busca) lista = lista.filter(p => (p.name || "").toLowerCase().includes(busca) || (p.id || "").toLowerCase().includes(busca));
+  if (filtro) lista = lista.filter(p => p.status === filtro);
+
+  const container = document.getElementById("listaPedidos");
+  container.innerHTML = lista.length
+    ? lista.map(p => `
+      <div class="pedido-item ${p.id === pedidoSelecionadoId ? 'selecionado' : ''}" data-id="${p.id}">
+        <div class="topo">
+          <span>${p.id}</span>
+          <span class="badge-status" style="background:${STATUS_COR[p.status] || '#999'}">${STATUS_LABELS[p.status] || p.status}</span>
+        </div>
+        <div class="cliente">${p.name || "-"}</div>
+        <div class="hora">${fmtHora(p.date)}</div>
+      </div>`).join("")
+    : `<div style="padding:20px;color:var(--text-muted);text-align:center;font-size:13px;">Nenhum pedido encontrado</div>`;
+
+  container.querySelectorAll(".pedido-item").forEach(el => {
+    el.addEventListener("click", () => {
+      pedidoSelecionadoId = el.dataset.id;
+      renderListaPedidos();
+      renderDetalhePedido(pedidos[pedidoSelecionadoId]);
+    });
+  });
+}
+
+/* =========================================================
+   PEDIDOS - DETALHE
+   ========================================================= */
+
+function renderDetalhePedido(order) {
+  const el = document.getElementById("detalhePedido");
+  if (!order) { el.innerHTML = `<div class="vazio">Selecione um pedido na lista</div>`; return; }
+
+  const enderecoTxt = order.delivery === "entrega"
+    ? `Entrega: ${order.addr || ""}, ${order.num || ""} - ${order.bairro || ""} - ${order.city || ""}`
+    : "Retirada na loja";
+
+  const itensHtml = (order.items || []).map(item => `
+    <div class="item-card">
+      <div class="nome-item">${item.productName || "-"} · qtd ${item.qty || 1}</div>
+      ${formatConfigLines(item).map(l => `<div class="linha-conf">${l}</div>`).join("")}
+      <div class="subtotal">${fmtBR(item.subtotal)}</div>
+    </div>`).join("");
+
+  const prox = proximoStatus(order.status);
+
+  el.innerHTML = `
+    <div class="det-topo">
+      <h3>Pedido ${order.id}</h3>
+      <span class="badge-status" style="background:${STATUS_COR[order.status] || '#999'}">${STATUS_LABELS[order.status] || order.status}</span>
+    </div>
+    <div class="det-hora">${fmtHora(order.date)}</div>
+
+    <div class="det-secao">Cliente</div>
+    <div>${order.name || "-"}${order.phone ? " · " + order.phone : ""}</div>
+    <div style="font-size:12.5px;color:var(--text-muted);margin-top:2px;">${enderecoTxt}</div>
+
+    <div class="det-secao">Itens</div>
+    ${itensHtml || '<div style="color:var(--text-muted);font-size:13px;">Sem itens</div>'}
+
+    <div class="det-secao">Pagamento</div>
+    <div>${PAYMENT_LABELS[order.payment] || order.payment || "-"}</div>
+    <div class="det-total">${fmtBR(order.totals?.total)}</div>
+
+    <div class="det-acoes">
+      ${prox ? `<button class="btn btn-primario" id="btnAvancar">Avançar para: ${STATUS_LABELS[prox]}</button>` : ""}
+      <button class="btn btn-secundario" id="btnImprimir">🖨️ Imprimir ficha</button>
+    </div>
+  `;
+
+  if (prox) {
+    document.getElementById("btnAvancar").addEventListener("click", () => avancarStatus(order.id, prox));
+  }
+  document.getElementById("btnImprimir").addEventListener("click", () => window.print());
+}
+
+function avancarStatus(pid, novoStatus) {
+  const agora = new Date().toISOString();
+  db.ref("pedidos/" + pid + "/status").set(novoStatus);
+  db.ref("pedidos/" + pid + "/statusHistory").transaction(hist => {
+    hist = hist || [];
+    hist.push({ status: novoStatus, at: agora });
+    return hist;
+  });
+}
+
+/* =========================================================
+   MODAL genérico
+   ========================================================= */
+const modalFundo = document.getElementById("modalFundo");
+const modalCaixa = document.getElementById("modalCaixa");
+function abrirModal(html) { modalCaixa.innerHTML = html; modalFundo.classList.add("ativo"); }
+function fecharModal() { modalFundo.classList.remove("ativo"); modalCaixa.innerHTML = ""; }
+modalFundo.addEventListener("click", (e) => { if (e.target === modalFundo) fecharModal(); });
+
+/* =========================================================
+   LINK PARA CLIENTES
+   ========================================================= */
+document.getElementById("btnLinkCliente").addEventListener("click", () => {
+  db.ref("config/linkCliente").once("value", (snap) => {
+    const linkAtual = snap.val() || "";
+    abrirModal(`
+      <h3>🔗 Link para clientes</h3>
+      <p style="font-size:13px;color:var(--text-muted);">Cole aqui o endereço onde o app de compras (vidracaria-app.html) está hospedado. Depois é só copiar e mandar pro cliente por WhatsApp.</p>
+      <div class="campo"><label>Endereço do app</label><input type="text" id="mLinkInput" value="${linkAtual}" placeholder="https://sualoja.com/app.html"></div>
+      <div class="link-box">
+        <input type="text" id="mLinkPronto" readonly value="${linkAtual}">
+        <button class="btn btn-primario" id="btnCopiarLink">Copiar</button>
+      </div>
+      <div class="modal-acoes">
+        <button class="btn btn-secundario" id="btnFecharModal">Fechar</button>
+        <button class="btn btn-primario" id="btnSalvarLink">Salvar</button>
+      </div>
+    `);
+    document.getElementById("btnFecharModal").addEventListener("click", fecharModal);
+    document.getElementById("btnSalvarLink").addEventListener("click", () => {
+      const novo = document.getElementById("mLinkInput").value.trim();
+      db.ref("config/linkCliente").set(novo);
+      document.getElementById("mLinkPronto").value = novo;
+    });
+    document.getElementById("btnCopiarLink").addEventListener("click", () => {
+      const val = document.getElementById("mLinkPronto").value;
+      if (!val) return;
+      navigator.clipboard.writeText(val);
+      const btn = document.getElementById("btnCopiarLink");
+      btn.textContent = "Copiado!";
+      setTimeout(() => btn.textContent = "Copiar", 1500);
+    });
+  });
+});
+
+/* =========================================================
+   CLIENTES
+   ========================================================= */
+let clientes = {};
+let clienteSelecionadoId = null;
+
+db.ref("clientes").on("value", (snap) => {
+  clientes = snap.val() || {};
+  renderListaClientes();
+  if (clienteSelecionadoId) renderDetalheCliente(clientes[clienteSelecionadoId]);
+});
+
+function clientesArray() {
+  return Object.values(clientes).sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+}
+
+document.getElementById("buscaCliente").addEventListener("input", renderListaClientes);
+
+function renderListaClientes() {
+  const busca = document.getElementById("buscaCliente").value.trim().toLowerCase();
+  let lista = clientesArray();
+  if (busca) lista = lista.filter(c => (c.name || "").toLowerCase().includes(busca) || (c.phone || "").includes(busca));
+
+  const el = document.getElementById("listaClientes");
+  el.innerHTML = lista.length ? lista.map(c => `
+    <div class="pedido-item ${c.id === clienteSelecionadoId ? 'selecionado' : ''}" data-id="${c.id}">
+      <div class="topo"><span>${c.name}</span>${c.isPro ? '<span class="badge-status" style="background:var(--amarelo);">PRO</span>' : ''}</div>
+      <div class="cliente">${c.phone || ""} · ${c.city || ""}</div>
+    </div>`).join("") : `<div style="padding:20px;color:var(--text-muted);text-align:center;font-size:13px;">Nenhum cliente</div>`;
+
+  el.querySelectorAll(".pedido-item").forEach(e => e.addEventListener("click", () => {
+    clienteSelecionadoId = e.dataset.id;
+    renderListaClientes();
+    renderDetalheCliente(clientes[clienteSelecionadoId]);
+  }));
+}
+
+function pedidosDoCliente(clienteId) {
+  const c = clientes[clienteId];
+  if (!c) return [];
+  return listaPedidosArray().filter(p => p.phone && c.phone && p.phone === c.phone);
+}
+
+function renderDetalheCliente(c) {
+  const el = document.getElementById("detalheCliente");
+  if (!c) { el.innerHTML = `<div class="vazio">Selecione um cliente</div>`; return; }
+
+  const pedidosCli = pedidosDoCliente(c.id);
+  const totalGasto = pedidosCli.reduce((s, p) => s + (p.totals?.total || 0), 0);
+
+  el.innerHTML = `
+    <div class="det-topo">
+      <h3>${c.name}</h3>
+      <button class="btn btn-secundario" id="btnEditarCliente">Editar</button>
+    </div>
+    <div style="font-size:13px;color:var(--text-muted);line-height:1.8;margin-top:10px;">
+      <div><b>Telefone:</b> ${c.phone || "—"}</div>
+      <div><b>E-mail:</b> ${c.email || "—"}</div>
+      <div><b>Documento:</b> ${c.doc || "—"}</div>
+      <div><b>Endereço:</b> ${c.addr || ""} ${c.num || ""} - ${c.bairro || ""} - ${c.city || ""}</div>
+    </div>
+
+    <div class="det-secao">Histórico de pedidos</div>
+    ${pedidosCli.length ? `
+      <div style="margin-bottom:8px;font-size:13px;">
+        <b style="color:var(--accent-dark);">${pedidosCli.length} pedidos</b> ·
+        <b style="color:var(--accent);">Total gasto: ${fmtBR(totalGasto)}</b>
+      </div>
+      ${pedidosCli.map(p => `
+        <div class="item-card">
+          <div class="nome-item">${p.id} <span class="badge-status" style="background:${STATUS_COR[p.status]};margin-left:6px;">${STATUS_LABELS[p.status]}</span></div>
+          <div class="linha-conf">${(p.items||[]).map(i => i.productName + " (" + (i.qty||1) + "x)").join(", ")}</div>
+          <div class="subtotal">${fmtBR(p.totals?.total)}</div>
+        </div>`).join("")}
+    ` : `<div style="color:var(--text-muted);font-size:13px;">Nenhum pedido ainda.</div>`}
+  `;
+
+  document.getElementById("btnEditarCliente").addEventListener("click", () => formCliente(c));
+}
+
+document.getElementById("btnNovoCliente").addEventListener("click", () => formCliente(null));
+
+function formCliente(c) {
+  const d = c || { id: "CLI-" + Date.now().toString(36).toUpperCase(), name: "", doc: "", phone: "", email: "", addr: "", num: "", bairro: "", city: "", isPro: false, createdAt: new Date().toISOString() };
+  abrirModal(`
+    <h3>${c ? "Editar cliente" : "Novo cliente"}</h3>
+    <div class="linha-form">
+      <div class="campo"><label>Nome completo *</label><input id="fNome" value="${d.name}"></div>
+      <div class="campo"><label>CPF/CNPJ</label><input id="fDoc" value="${d.doc}"></div>
+    </div>
+    <div class="linha-form">
+      <div class="campo"><label>Telefone *</label><input id="fFone" value="${d.phone}"></div>
+      <div class="campo"><label>E-mail</label><input id="fEmail" value="${d.email}"></div>
+    </div>
+    <div class="linha-form">
+      <div class="campo"><label>Endereço</label><input id="fAddr" value="${d.addr}"></div>
+      <div class="campo"><label>Número</label><input id="fNum" value="${d.num}"></div>
+    </div>
+    <div class="linha-form">
+      <div class="campo"><label>Bairro</label><input id="fBairro" value="${d.bairro}"></div>
+      <div class="campo"><label>Cidade</label><input id="fCity" value="${d.city}"></div>
+    </div>
+    <label style="font-size:13px;margin-top:8px;display:inline-block;"><input type="checkbox" id="fPro" ${d.isPro ? "checked" : ""}> Cliente PRO (tabela -12%)</label>
+    <div class="modal-acoes">
+      <button class="btn btn-secundario" id="btnCancelarCliente">Cancelar</button>
+      <button class="btn btn-primario" id="btnSalvarCliente">Salvar</button>
+    </div>
+  `);
+  document.getElementById("btnCancelarCliente").addEventListener("click", fecharModal);
+  document.getElementById("btnSalvarCliente").addEventListener("click", () => {
+    const nome = document.getElementById("fNome").value.trim();
+    const fone = document.getElementById("fFone").value.trim();
+    if (!nome || !fone) { alert("Nome e telefone são obrigatórios."); return; }
+    const novo = {
+      ...d, name: nome, phone: fone,
+      doc: document.getElementById("fDoc").value.trim(),
+      email: document.getElementById("fEmail").value.trim(),
+      addr: document.getElementById("fAddr").value.trim(),
+      num: document.getElementById("fNum").value.trim(),
+      bairro: document.getElementById("fBairro").value.trim(),
+      city: document.getElementById("fCity").value.trim(),
+      isPro: document.getElementById("fPro").checked,
+    };
+    db.ref("clientes/" + novo.id).set(novo);
+    clienteSelecionadoId = novo.id;
+    fecharModal();
+  });
+}
+
+/* =========================================================
+   AUTOCOMPLETE genérico (usado no cliente e no produto)
+   ========================================================= */
+function ligarAutocomplete({ input, lista, buscarFn, renderItemFn, onSelectFn }) {
+  function abrir(termo) {
+    const resultados = buscarFn(termo);
+    if (!resultados.length) {
+      lista.innerHTML = `<div class="autocomplete-vazio">Nada encontrado — pode digitar livre e cadastra na hora</div>`;
+    } else {
+      lista.innerHTML = resultados.map((r, i) => renderItemFn(r, i)).join("");
+      lista.querySelectorAll(".autocomplete-item").forEach((el, i) => {
+        el.addEventListener("mousedown", (e) => { // mousedown dispara antes do blur
+          e.preventDefault();
+          onSelectFn(resultados[i]);
+          lista.classList.remove("aberta");
+        });
+      });
+    }
+    lista.classList.add("aberta");
+  }
+  input.addEventListener("input", () => abrir(input.value.trim()));
+  input.addEventListener("focus", () => abrir(input.value.trim()));
+  input.addEventListener("blur", () => setTimeout(() => lista.classList.remove("aberta"), 120));
+}
+
+/* =========================================================
+   NOVA VENDA (balcão)
+   ========================================================= */
+let itensVenda = [];
+let clienteVendaSelecionadoId = null;
+
+// --- Busca de cliente (mostra nome + telefone pra diferenciar homônimos) ---
+const vCliNomeInput = document.getElementById("vCliNome");
+const vCliFoneInput = document.getElementById("vCliFone");
+const vCliAviso = document.getElementById("vCliAviso");
+
+ligarAutocomplete({
+  input: vCliNomeInput,
+  lista: document.getElementById("vCliLista"),
+  buscarFn: (termo) => {
+    if (!termo) return clientesArray().slice(0, 8);
+    const t = termo.toLowerCase();
+    return clientesArray().filter(c => (c.name || "").toLowerCase().includes(t) || (c.phone || "").includes(t)).slice(0, 8);
+  },
+  renderItemFn: (c) => `
+    <div class="autocomplete-item">
+      <div class="principal">${c.name}</div>
+      <div class="secundario">${c.phone || "sem telefone"}${c.city ? " · " + c.city : ""}</div>
+    </div>`,
+  onSelectFn: (c) => {
+    vCliNomeInput.value = c.name;
+    vCliFoneInput.value = c.phone || "";
+    clienteVendaSelecionadoId = c.id;
+    mostrarAvisoCliente(true, c.name);
+  }
+});
+
+vCliNomeInput.addEventListener("input", () => {
+  // se o texto não bate mais com o cliente selecionado, desmarca (é um novo nome)
+  if (clienteVendaSelecionadoId && clientes[clienteVendaSelecionadoId]?.name !== vCliNomeInput.value) {
+    clienteVendaSelecionadoId = null;
+  }
+  vCliAviso.style.display = "none";
+});
+
+function mostrarAvisoCliente(existente, nome) {
+  vCliAviso.style.display = "block";
+  if (existente) {
+    vCliAviso.className = "aviso-cliente existente";
+    vCliAviso.textContent = "✓ Cliente já cadastrado: " + nome;
+  } else {
+    vCliAviso.className = "aviso-cliente novo";
+    vCliAviso.textContent = "⚠ Cliente novo — vai ser cadastrado automaticamente ao finalizar a venda.";
+  }
+}
+
+// --- Itens da venda, cada um com busca de produto no catálogo ---
+function renderItensVenda() {
+  const el = document.getElementById("vItens");
+  el.innerHTML = itensVenda.map((it, i) => `
+    <div class="item-venda-row">
+      <div class="campo-produto autocomplete-wrap">
+        <input class="nome-i" placeholder="Digite pra buscar o produto..." value="${it.nome}" data-i="${i}" data-campo="nome" autocomplete="off">
+        <div class="unid-i">${it.unidade === "m²" ? "Quantidade em m²" : "Quantidade em unidades"}</div>
+        <div class="autocomplete-list" data-lista-i="${i}"></div>
+      </div>
+      <input class="qtd-i" type="number" min="0.01" step="0.01" placeholder="Qtd" value="${it.qtd}" data-i="${i}" data-campo="qtd">
+      <input class="preco-i" type="number" step="0.01" placeholder="Preço unit." value="${it.preco}" data-i="${i}" data-campo="preco">
+      <button class="rm" data-i="${i}">✕</button>
+    </div>`).join("");
+
+  el.querySelectorAll("input[data-campo]").forEach(inp => inp.addEventListener("input", (e) => {
+    const i = +e.target.dataset.i, campo = e.target.dataset.campo;
+    itensVenda[i][campo] = campo === "nome" ? e.target.value : parseFloat(e.target.value) || 0;
+    atualizarTotalVenda();
+  }));
+  el.querySelectorAll(".rm").forEach(btn => btn.addEventListener("click", (e) => {
+    itensVenda.splice(+e.target.dataset.i, 1);
+    renderItensVenda();
+    atualizarTotalVenda();
+  }));
+
+  // liga autocomplete de produto em cada linha
+  el.querySelectorAll(".item-venda-row").forEach((row, i) => {
+    ligarAutocomplete({
+      input: row.querySelector(".nome-i"),
+      lista: row.querySelector(".autocomplete-list"),
+      buscarFn: (termo) => {
+        const cat = catalogoCompleto();
+        if (!termo) return cat.slice(0, 8);
+        const t = termo.toLowerCase();
+        return cat.filter(p => p.nome.toLowerCase().includes(t)).slice(0, 8);
+      },
+      renderItemFn: (p) => `
+        <div class="autocomplete-item">
+          <div class="principal">${p.nome}</div>
+          <div class="secundario">${fmtBR(p.preco)} / ${p.unidade}</div>
+        </div>`,
+      onSelectFn: (p) => {
+        itensVenda[i].nome = p.nome;
+        itensVenda[i].preco = p.preco;
+        itensVenda[i].unidade = p.unidade;
+        renderItensVenda();
+        atualizarTotalVenda();
+      }
+    });
+  });
+}
+
+function atualizarTotalVenda() {
+  const total = itensVenda.reduce((s, it) => s + (it.qtd * it.preco), 0);
+  document.getElementById("vTotal").textContent = fmtBR(total);
+  return total;
+}
+
+document.getElementById("btnAddItemVenda").addEventListener("click", () => {
+  itensVenda.push({ nome: "", qtd: 1, preco: 0, unidade: "un" });
+  renderItensVenda();
+});
+
+document.getElementById("btnFinalizarVenda").addEventListener("click", () => {
+  const nome = vCliNomeInput.value.trim();
+  const fone = vCliFoneInput.value.trim();
+  const msg = document.getElementById("vMsg");
+  if (!nome || !fone) { msg.style.color = "var(--danger)"; msg.textContent = "Nome e telefone do cliente são obrigatórios."; return; }
+  if (!itensVenda.length || itensVenda.some(it => !it.nome)) { msg.style.color = "var(--danger)"; msg.textContent = "Adicione ao menos um item com nome."; return; }
+
+  const total = atualizarTotalVenda();
+  const id = "PED-" + Date.now().toString(36).toUpperCase();
+  const pedido = {
+    id, date: new Date().toISOString(), name: nome, phone: fone,
+    origem: "balcao", status: "recebido", statusHistory: [{ status: "recebido", at: new Date().toISOString() }],
+    payment: document.getElementById("vPagamento").value,
+    delivery: "retirada",
+    items: itensVenda.map(it => ({ productName: it.nome, productType: "avulso", qty: it.qtd, config: {}, subtotal: it.qtd * it.preco })),
+    totals: { total },
+  };
+  db.ref("pedidos/" + id).set(pedido);
+
+  // cliente novo (não veio da busca) -> cadastra automático
+  if (!clienteVendaSelecionadoId) {
+    const jaExiste = clientesArray().find(c => c.phone === fone);
+    if (!jaExiste) {
+      const cid = "CLI-" + Date.now().toString(36).toUpperCase();
+      db.ref("clientes/" + cid).set({ id: cid, name: nome, phone: fone, doc: "", email: "", addr: "", num: "", bairro: "", city: "", isPro: false, createdAt: new Date().toISOString() });
+    }
+  }
+
+  // produtos digitados na mão que não estavam no catálogo -> salva pra próxima busca
+  itensVenda.forEach(it => {
+    const jaEsta = catalogoCompleto().some(p => p.nome.toLowerCase() === it.nome.toLowerCase());
+    if (!jaEsta) {
+      const pid = "EXTRA-" + it.nome.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      db.ref("catalogoExtra/" + pid).set({ nome: it.nome, preco: it.preco, unidade: it.unidade || "un" });
+    }
+  });
+
+  msg.style.color = "var(--accent-dark)";
+  msg.textContent = "Venda registrada! Pedido " + id;
+  itensVenda = [];
+  clienteVendaSelecionadoId = null;
+  vCliAviso.style.display = "none";
+  renderItensVenda();
+  vCliNomeInput.value = "";
+  vCliFoneInput.value = "";
+  atualizarTotalVenda();
+});
+renderItensVenda();
+
+/* =========================================================
+   PRODUÇÃO (kanban)
+   ========================================================= */
+function renderKanban() {
+  const el = document.getElementById("kanban");
+  const lista = listaPedidosArray();
+  el.innerHTML = STATUS_ORDER.map(st => {
+    const itensSt = lista.filter(p => p.status === st);
+    const cards = itensSt.map(p => {
+      const resumo = (p.items || []).map(i => `${i.productName || "-"} ${i.config?.width || ""}${i.config?.width ? "x" + (i.config?.height || "") : ""}`).join(", ");
+      const prox = proximoStatus(p.status);
+      return `<div class="kanban-card">
+        <div class="id">${p.id}</div>
+        <div class="nome">${p.name || "-"}</div>
+        <div class="itens">${resumo}</div>
+        ${prox ? `<button class="btn btn-primario" data-id="${p.id}" data-prox="${prox}">→ ${STATUS_LABELS[prox]}</button>` : ""}
+      </div>`;
+    }).join("") || `<div class="kanban-vazio">vazio</div>`;
+
+    return `<div class="kanban-col">
+      <div class="cabecalho" style="background:${STATUS_COR[st]}">${STATUS_LABELS[st]} (${itensSt.length})</div>
+      <div class="corpo">${cards}</div>
+    </div>`;
+  }).join("");
+
+  el.querySelectorAll("button[data-prox]").forEach(btn => btn.addEventListener("click", () => {
+    avancarStatus(btn.dataset.id, btn.dataset.prox);
+  }));
+}
+
+document.getElementById("btnExportCorte").addEventListener("click", () => {
+  // Só entram peças de vidro/espelho com medidas - itens de caixilho (box) e
+  // acessórios avulsos não vão pra mesa de corte.
+  const pendentes = listaPedidosArray().filter(p => p.status === "recebido" || p.status === "em_producao");
+  const linhas = [["Pedido", "Cliente", "Peça", "Largura_mm", "Altura_mm", "Espessura_mm", "Cor", "Acabamento", "Qtd", "Furos", "Recortes", "Obs"]];
+
+  pendentes.forEach(p => {
+    (p.items || []).forEach(item => {
+      const c = item.config || {};
+      if (!c.width || !c.height) return; // pula item sem medida (ex: acessório avulso)
+      linhas.push([
+        p.id, p.name || "", item.productName || "",
+        c.width, c.height, c.thickness || "", c.color || "", c.finish || "",
+        item.qty || 1, c.holes || "", c.cuts || "", c.obs || ""
+      ]);
+    });
+  });
+
+  if (linhas.length === 1) { alert("Nenhuma peça com medidas pendente de corte no momento."); return; }
+  baixarCSV("peças-para-corte.csv", linhas);
+});
+
+/* =========================================================
+   ESTOQUE
+   ========================================================= */
+let estoque = {};
+let produtoSelecionadoId = null;
+
+db.ref("estoque").on("value", (snap) => {
+  estoque = snap.val() || {};
+  renderListaEstoque();
+  if (produtoSelecionadoId) renderDetalheEstoque(estoque[produtoSelecionadoId]);
+});
+
+function estoqueArray() {
+  return Object.values(estoque).sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+}
+
+document.getElementById("buscaEstoque").addEventListener("input", renderListaEstoque);
+
+function renderListaEstoque() {
+  const busca = document.getElementById("buscaEstoque").value.trim().toLowerCase();
+  let lista = estoqueArray();
+  if (busca) lista = lista.filter(p => (p.name || "").toLowerCase().includes(busca));
+
+  const el = document.getElementById("listaEstoque");
+  el.innerHTML = lista.length ? lista.map(p => {
+    const baixo = p.qty <= p.min;
+    return `<div class="pedido-item ${p.id === produtoSelecionadoId ? 'selecionado' : ''}" data-id="${p.id}">
+      <div class="topo"><span>${baixo ? "⚠️ " : "✓ "}${p.name}</span></div>
+      <div class="cliente">${p.qty} ${p.unit || ""} · mín ${p.min} · ${fmtBR(p.cost)}</div>
+    </div>`;
+  }).join("") : `<div style="padding:20px;color:var(--text-muted);text-align:center;font-size:13px;">Nenhum produto</div>`;
+
+  el.querySelectorAll(".pedido-item").forEach(e => e.addEventListener("click", () => {
+    produtoSelecionadoId = e.dataset.id;
+    renderListaEstoque();
+    renderDetalheEstoque(estoque[produtoSelecionadoId]);
+  }));
+}
+
+function renderDetalheEstoque(p) {
+  const el = document.getElementById("detalheEstoque");
+  if (!p) { el.innerHTML = `<div class="vazio">Selecione um produto</div>`; return; }
+  const baixo = p.qty <= p.min;
+  el.innerHTML = `
+    <div class="det-topo">
+      <h3>${p.name}</h3>
+      ${baixo ? '<span class="badge-status" style="background:var(--amarelo);">⚠️ ESTOQUE BAIXO</span>' : ""}
+    </div>
+    <div class="cards-metricas" style="margin-top:14px;">
+      <div class="metrica"><div class="rotulo">Estoque atual</div><div class="valor ${baixo ? 'danger' : ''}">${p.qty} ${p.unit || ""}</div></div>
+      <div class="metrica"><div class="rotulo">Mínimo</div><div class="valor">${p.min} ${p.unit || ""}</div></div>
+      <div class="metrica"><div class="rotulo">Custo unit.</div><div class="valor">${fmtBR(p.cost)}</div></div>
+      <div class="metrica"><div class="rotulo">Valor em estoque</div><div class="valor">${fmtBR(p.qty * (p.cost || 0))}</div></div>
+    </div>
+    <div class="det-acoes">
+      <button class="btn btn-primario" id="btnEntradaProd">📥 Dar entrada</button>
+      <button class="btn btn-secundario" id="btnEditarProd">Editar</button>
+    </div>
+  `;
+  document.getElementById("btnEntradaProd").addEventListener("click", () => formEntradaEstoque(p));
+  document.getElementById("btnEditarProd").addEventListener("click", () => formProduto(p));
+}
+
+document.getElementById("btnNovoProduto").addEventListener("click", () => formProduto(null));
+document.getElementById("btnEntradaEstoque").addEventListener("click", () => formEntradaEstoque(null));
+
+function formProduto(p) {
+  const d = p || { id: "PROD-" + Date.now().toString(36).toUpperCase(), name: "", qty: 0, min: 0, unit: "un", cost: 0 };
+  abrirModal(`
+    <h3>${p ? "Editar produto" : "Novo produto"}</h3>
+    <div class="campo"><label>Nome *</label><input id="pNome" value="${d.name}"></div>
+    <div class="linha-form">
+      <div class="campo"><label>Quantidade</label><input id="pQtd" type="number" value="${d.qty}"></div>
+      <div class="campo"><label>Mínimo</label><input id="pMin" type="number" value="${d.min}"></div>
+    </div>
+    <div class="linha-form">
+      <div class="campo"><label>Unidade</label><input id="pUnid" value="${d.unit}"></div>
+      <div class="campo"><label>Custo unitário</label><input id="pCusto" type="number" step="0.01" value="${d.cost}"></div>
+    </div>
+    <div class="modal-acoes">
+      <button class="btn btn-secundario" id="btnCancelarProd">Cancelar</button>
+      <button class="btn btn-primario" id="btnSalvarProd">Salvar</button>
+    </div>
+  `);
+  document.getElementById("btnCancelarProd").addEventListener("click", fecharModal);
+  document.getElementById("btnSalvarProd").addEventListener("click", () => {
+    const nome = document.getElementById("pNome").value.trim();
+    if (!nome) { alert("Informe o nome do produto."); return; }
+    const novo = { ...d, name: nome,
+      qty: parseFloat(document.getElementById("pQtd").value) || 0,
+      min: parseFloat(document.getElementById("pMin").value) || 0,
+      unit: document.getElementById("pUnid").value.trim(),
+      cost: parseFloat(document.getElementById("pCusto").value) || 0 };
+    db.ref("estoque/" + novo.id).set(novo);
+    produtoSelecionadoId = novo.id;
+    fecharModal();
+  });
+}
+
+function formEntradaEstoque(p) {
+  const lista = estoqueArray();
+  abrirModal(`
+    <h3>📥 Entrada de mercadoria</h3>
+    <div class="campo"><label>Produto</label>
+      <select id="eProduto">${lista.map(x => `<option value="${x.id}" ${p && x.id === p.id ? "selected" : ""}>${x.name}</option>`).join("")}</select>
+    </div>
+    <div class="campo" style="margin-top:10px;"><label>Quantidade a entrar</label><input id="eQtd" type="number" value="1"></div>
+    <div class="modal-acoes">
+      <button class="btn btn-secundario" id="btnCancelarEntrada">Cancelar</button>
+      <button class="btn btn-primario" id="btnConfirmarEntrada">Confirmar entrada</button>
+    </div>
+  `);
+  document.getElementById("btnCancelarEntrada").addEventListener("click", fecharModal);
+  document.getElementById("btnConfirmarEntrada").addEventListener("click", () => {
+    const pid = document.getElementById("eProduto").value;
+    const qtd = parseFloat(document.getElementById("eQtd").value) || 0;
+    if (!pid || qtd <= 0) { alert("Selecione um produto e quantidade válida."); return; }
+    db.ref("estoque/" + pid + "/qty").transaction(atual => (atual || 0) + qtd);
+    fecharModal();
+  });
+}
+
+/* =========================================================
+   RELATÓRIOS
+   ========================================================= */
+function periodoAtual() {
+  const ini = document.getElementById("rDataIni").value;
+  const fim = document.getElementById("rDataFim").value;
+  return { ini: ini ? new Date(ini + "T00:00:00") : null, fim: fim ? new Date(fim + "T23:59:59") : null };
+}
+
+function pedidosNoPeriodo() {
+  const { ini, fim } = periodoAtual();
+  return listaPedidosArray().filter(p => {
+    if (!p.date) return false;
+    const d = new Date(p.date);
+    return (!ini || d >= ini) && (!fim || d <= fim);
+  });
+}
+
+document.querySelectorAll(".btn-atalho").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const dias = parseInt(btn.dataset.dias, 10);
+    const fim = new Date();
+    const ini = new Date();
+    ini.setDate(ini.getDate() - dias);
+    document.getElementById("rDataIni").value = ini.toISOString().slice(0, 10);
+    document.getElementById("rDataFim").value = fim.toISOString().slice(0, 10);
+    renderPreviewRelatorio();
+  });
+});
+document.getElementById("rDataIni").addEventListener("change", renderPreviewRelatorio);
+document.getElementById("rDataFim").addEventListener("change", renderPreviewRelatorio);
+
+function renderPreviewRelatorio() {
+  const lista = pedidosNoPeriodo();
+  const el = document.getElementById("previewRelatorio");
+  const totalPeriodo = lista.reduce((s, p) => s + (p.totals?.total || 0), 0);
+  el.innerHTML = lista.length ? [
+    `<div class="linha"><b>${lista.length} pedidos</b>&nbsp;·&nbsp;<b style="color:var(--accent);">${fmtBR(totalPeriodo)}</b></div>`,
+    ...lista.slice(0, 20).map(p => `
+      <div class="linha">
+        <span class="id">${p.id}</span><span class="nome">${p.name || "-"}</span>
+        <span class="badge-status" style="background:${STATUS_COR[p.status]}">${STATUS_LABELS[p.status]}</span>
+        <span class="total">${fmtBR(p.totals?.total)}</span>
+      </div>`)
+  ].join("") : `<div class="linha" style="color:var(--text-muted);">Nenhum pedido no período</div>`;
+}
+
+function baixarCSV(nomeArquivo, linhas) {
+  const csv = linhas.map(l => l.map(c => `"${String(c ?? "").replace(/"/g, '""')}"`).join(";")).join("\n");
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = nomeArquivo; a.click();
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById("btnExportVendas").addEventListener("click", () => {
+  const lista = pedidosNoPeriodo();
+  const linhas = [["Pedido", "Data", "Cliente", "Telefone", "Status", "Pagamento", "Total"]];
+  lista.forEach(p => linhas.push([p.id, fmtHora(p.date), p.name, p.phone, STATUS_LABELS[p.status], p.payment, (p.totals?.total || 0).toFixed(2)]));
+  baixarCSV("vendas.csv", linhas);
+});
+document.getElementById("btnExportClientes").addEventListener("click", () => {
+  const linhas = [["Nome", "Telefone", "E-mail", "Documento", "Endereço", "Cidade", "PRO"]];
+  clientesArray().forEach(c => linhas.push([c.name, c.phone, c.email, c.doc, `${c.addr || ""} ${c.num || ""}`, c.city, c.isPro ? "Sim" : "Não"]));
+  baixarCSV("clientes.csv", linhas);
+});
+document.getElementById("btnExportEstoque").addEventListener("click", () => {
+  const linhas = [["Produto", "Quantidade", "Mínimo", "Unidade", "Custo", "Valor em estoque"]];
+  estoqueArray().forEach(p => linhas.push([p.name, p.qty, p.min, p.unit, (p.cost || 0).toFixed(2), ((p.qty || 0) * (p.cost || 0)).toFixed(2)]));
+  baixarCSV("estoque.csv", linhas);
+});
+
+// período padrão: últimos 30 dias
+(() => {
+  const fim = new Date(), ini = new Date();
+  ini.setDate(ini.getDate() - 30);
+  document.getElementById("rDataIni").value = ini.toISOString().slice(0, 10);
+  document.getElementById("rDataFim").value = fim.toISOString().slice(0, 10);
+})();
+
+/* =========================================================
+   Re-render views dependentes de pedidos quando trocar de aba
+   ========================================================= */
+document.querySelectorAll(".nav-item[data-view]").forEach(el => {
+  el.addEventListener("click", () => {
+    const v = el.dataset.view;
+    if (v === "producao") renderKanban();
+    if (v === "relatorios") renderPreviewRelatorio();
+    if (v === "clientes") renderListaClientes();
+    if (v === "estoque") renderListaEstoque();
+  });
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1553 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DFA Vidraçaria - Faça seu Pedido</title>
+<style>
+  :root {
+    --bg: #FAFAF8;
+    --bg-card: #FFFFFF;
+    --border: #E4E1DA;
+    --text: #232323;
+    --text-muted: #6B6B63;
+    --accent: #1B6B3C;      /* verde da logo DFA */
+    --accent-dark: #14512D;
+    --accent-light: #E7F3EB;
+    --azul: #1F4E8C;        /* azul da logo DFA, usado em detalhes/preço */
+    --danger: #C0392B;
+    --radius: 10px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+
+    /* --- paleta de destaque das tarjas (cores claras no fundo, cor forte na tarja) --- */
+    --tag-verde: #1B6B3C;      --tag-verde-bg: #E7F3EB;
+    --tag-azul: #1F4E8C;       --tag-azul-bg: #E8EFF9;
+    --tag-laranja: #C9691A;    --tag-laranja-bg: #FBEEE0;
+    --tag-roxo: #6E3E91;       --tag-roxo-bg: #F0E7F5;
+    --tag-rosa: #B8305C;       --tag-rosa-bg: #FBE6ED;
+    --tag-turquesa: #147D82;   --tag-turquesa-bg: #E3F3F3;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.4;
+  }
+
+  header {
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 20px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  header img.logo {
+    height: 44px;
+    width: auto;
+    display: block;
+  }
+
+  header h1 {
+    margin: 0;
+    font-size: 19px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  header p {
+    margin: 2px 0 0;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  /* --- Banner de produto selecionado via carrossel --- */
+  .banner-produto {
+    display: none;
+    align-items: center;
+    gap: 12px;
+    background: var(--accent-light);
+    border: 1.5px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 12px;
+    margin-bottom: 14px;
+  }
+
+  .banner-produto.ativo { display: flex; }
+
+  .banner-produto img {
+    width: 64px;
+    height: 64px;
+    object-fit: cover;
+    border-radius: 8px;
+    flex-shrink: 0;
+  }
+
+  .banner-produto .info { flex: 1; }
+
+  .banner-produto .titulo {
+    font-size: 12px;
+    color: var(--accent-dark);
+    font-weight: 700;
+  }
+
+  .banner-produto .nome-produto {
+    font-size: 15px;
+    font-weight: 700;
+    margin-top: 1px;
+  }
+
+  .banner-produto .trocar {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    text-decoration: underline;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    margin-top: 3px;
+  }
+
+  .aviso-whatsapp {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #E8F7EC;
+    border: 1px solid #BFE6C8;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-top: 10px;
+    font-size: 12.5px;
+    color: var(--text);
+  }
+
+  .aviso-whatsapp a {
+    color: var(--accent-dark);
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .aviso-whatsapp a:hover { text-decoration: underline; }
+
+  /* --- Carrossel de produtos em destaque --- */
+  .carrossel-wrap {
+    position: relative;
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 0;
+  }
+
+  .carrossel-titulo {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 0 16px 10px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .carrossel-track {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    scroll-snap-type: x mandatory;
+    padding: 0 16px 4px;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .carrossel-track::-webkit-scrollbar { display: none; }
+
+  .carrossel-item {
+    flex: 0 0 auto;
+    width: 210px;
+    scroll-snap-align: start;
+    text-align: center;
+    cursor: pointer;
+  }
+
+  .carrossel-item img {
+    width: 210px;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 8px;
+    background: #EFEFEA;
+    border: 1px solid var(--border);
+    transition: border-color 0.15s;
+  }
+
+  .carrossel-item:hover img { border-color: var(--accent); }
+
+  .carrossel-item .nome {
+    font-size: 13px;
+    font-weight: 600;
+    margin-top: 6px;
+    color: var(--text);
+  }
+
+  .carrossel-item .preco-partir {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  .carrossel-item .preco-partir strong {
+    color: var(--accent-dark);
+    font-size: 13px;
+  }
+
+  .carrossel-item .comprar {
+    font-size: 11.5px;
+    color: var(--accent-dark);
+    font-weight: 600;
+    margin-top: 3px;
+  }
+
+  .carrossel-seta {
+    position: absolute;
+    top: 52%;
+    transform: translateY(-50%);
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 16px;
+    color: var(--text);
+    z-index: 5;
+  }
+
+  .carrossel-seta:hover { border-color: var(--accent); }
+  .carrossel-seta.esquerda { left: 4px; }
+  .carrossel-seta.direita { right: 4px; }
+
+  /* --- "Você também pode gostar" (dentro do Passo 1) --- */
+  .recom-bloco {
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px dashed var(--border);
+  }
+
+  .recom-titulo {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+
+  .recom-subtitulo {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+
+  .recom-track {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    scroll-snap-type: x mandatory;
+    padding: 2px 2px 8px;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .recom-track::-webkit-scrollbar { display: none; }
+
+  .recom-track-wrap {
+    position: relative;
+  }
+
+  .recom-seta {
+    position: absolute;
+    top: 40px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 15px;
+    color: var(--text);
+    z-index: 5;
+  }
+
+  .recom-seta:hover { border-color: var(--accent); }
+  .recom-seta.esquerda { left: -4px; }
+  .recom-seta.direita { right: -4px; }
+
+  .recom-card {
+    position: relative;
+    flex: 0 0 auto;
+    width: 148px;
+    scroll-snap-align: start;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-card);
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.15s, transform 0.15s;
+  }
+
+  .recom-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+  }
+
+  .recom-card .foto-wrap {
+    position: relative;
+    background: #F2F1EC;
+  }
+
+  .recom-card img {
+    width: 100%;
+    height: 92px;
+    object-fit: contain;
+    display: block;
+    padding: 8px;
+  }
+
+  .recom-card .tarja {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    color: #fff;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
+  .recom-card .info { padding: 8px 9px 10px; }
+
+  .recom-card .nome {
+    font-size: 12.5px;
+    font-weight: 700;
+    line-height: 1.25;
+  }
+
+  .recom-card .preco-linha {
+    margin-top: 4px;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .recom-card .preco-linha strong {
+    display: block;
+    font-size: 14.5px;
+    font-weight: 800;
+    color: var(--text);
+  }
+
+  .recom-card .btn-quero {
+    margin-top: 7px;
+    width: 100%;
+    background: var(--accent-light);
+    color: var(--accent-dark);
+    border: none;
+    border-radius: 6px;
+    padding: 6px 0;
+    font-size: 11.5px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .recom-card .btn-quero:hover { background: var(--accent); color: #fff; }
+
+  .recom-aviso {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #E8F7EC;
+    border: 1.5px solid #BFE6C8;
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-top: 12px;
+    font-size: 12.5px;
+    color: var(--text);
+    transition: box-shadow 0.2s, border-color 0.2s;
+  }
+
+  .recom-aviso.destaque {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-light);
+  }
+
+  .recom-aviso a {
+    color: var(--accent-dark);
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .recom-aviso a:hover { text-decoration: underline; }
+
+  main {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 20px 16px 100px;
+  }
+
+  .step {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+  }
+
+  .step-label {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent-dark);
+    background: var(--accent-light);
+    padding: 3px 10px;
+    border-radius: 20px;
+    margin-bottom: 10px;
+  }
+
+  .step h2 {
+    margin: 0 0 12px;
+    font-size: 17px;
+  }
+
+  /* --- Seleção de vidro --- */
+  .vidro-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+  }
+
+  .vidro-card {
+    position: relative;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0 0 12px;
+    cursor: pointer;
+    text-align: left;
+    background: var(--bg-card);
+    overflow: hidden;
+    transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+  }
+
+  .vidro-card:hover {
+    border-color: var(--accent);
+    box-shadow: var(--shadow);
+    transform: translateY(-2px);
+  }
+
+  .vidro-card.selected {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-light), var(--shadow);
+  }
+
+  .vidro-card .foto-wrap {
+    position: relative;
+    background: #F2F1EC;
+  }
+
+  .vidro-card img {
+    width: 100%;
+    height: 100px;
+    object-fit: contain;
+    display: block;
+    padding: 10px;
+  }
+
+  .vidro-card .tarja {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    font-size: 10.5px;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    color: #fff;
+    padding: 3px 8px;
+    border-radius: 4px;
+  }
+
+  .vidro-card .check {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 800;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .vidro-card.selected .check { display: flex; }
+
+  .vidro-card .info { padding: 10px 12px 0; }
+
+  .vidro-card .nome {
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text);
+  }
+
+  .vidro-card .espessura {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 1px;
+  }
+
+  .vidro-card .preco-linha {
+    margin-top: 6px;
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+  }
+
+  .vidro-card .preco {
+    font-size: 17px;
+    font-weight: 800;
+  }
+
+  .vidro-card .preco-unid {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  /* --- Medidas --- */
+  .medidas-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  .campo {
+    flex: 1;
+  }
+
+  .campo label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--text-muted);
+  }
+
+  .campo input {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  .campo input:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .campo input.campo-texto {
+    font-size: 15px;
+  }
+
+  .dica-medida {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    font-size: 12.5px;
+    color: var(--text-muted);
+    background: var(--accent-light);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 14px;
+  }
+
+  .desenho-wrap {
+    display: flex;
+    justify-content: center;
+    padding: 16px 0 4px;
+  }
+
+  /* --- Acessórios --- */
+  .acessorio-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .acessorio-row:last-child { border-bottom: none; }
+
+  .acessorio-nome {
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .acessorio-preco {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .qtd-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .qtd-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    border: 1.5px solid var(--border);
+    background: var(--bg-card);
+    font-size: 16px;
+    cursor: pointer;
+    color: var(--text);
+  }
+
+  .qtd-btn:hover { border-color: var(--accent); }
+
+  .qtd-val {
+    min-width: 18px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 14px;
+  }
+
+  /* --- Forma de pagamento --- */
+  .pagamento-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+  }
+
+  .pagamento-card {
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 10px;
+    text-align: center;
+    cursor: pointer;
+    background: var(--bg-card);
+    transition: border-color 0.15s, background 0.15s;
+  }
+
+  .pagamento-card:hover { border-color: var(--accent); }
+
+  .pagamento-card.selected {
+    border-color: var(--accent);
+    background: var(--accent-light);
+  }
+
+  .pagamento-card .icone {
+    font-size: 22px;
+    margin-bottom: 6px;
+  }
+
+  .pagamento-card .nome {
+    font-weight: 600;
+    font-size: 13.5px;
+  }
+
+  .pagamento-card .desc {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  /* --- Resumo / preço --- */
+  .resumo-preco {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding-top: 10px;
+  }
+
+  .resumo-preco .label {
+    font-size: 14px;
+    color: var(--text-muted);
+  }
+
+  .resumo-preco .valor {
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--accent-dark);
+  }
+
+  /* --- Botão fixo de finalizar --- */
+  .barra-fixa {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--bg-card);
+    border-top: 1px solid var(--border);
+    padding: 12px 16px;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.05);
+  }
+
+  .barra-fixa-inner {
+    max-width: 640px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .barra-total {
+    flex: 1;
+  }
+
+  .barra-total .label {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .barra-total .valor {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--accent-dark);
+  }
+
+  .btn-finalizar {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 14px 22px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .btn-finalizar:hover { background: var(--accent-dark); }
+
+  .btn-finalizar:disabled {
+    background: #C9C6BE;
+    cursor: not-allowed;
+  }
+
+  .msg-status {
+    text-align: center;
+    font-size: 13px;
+    padding: 10px;
+    border-radius: 8px;
+    margin-top: 10px;
+    display: none;
+  }
+
+  .msg-status.ok {
+    display: block;
+    background: var(--accent-light);
+    color: var(--accent-dark);
+  }
+
+  .msg-status.erro {
+    display: block;
+    background: #FBEAE8;
+    color: var(--danger);
+  }
+</style>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+</head>
+<body>
+
+<header>
+  <img class="logo" src="img/logo.jpeg" alt="DFA Vidraçaria" onerror="this.style.display='none'">
+  <div>
+    <h1>DFA Vidraçaria</h1>
+    <p>Escolha o vidro, informe a medida e receba o preço na hora</p>
+  </div>
+</header>
+
+<div class="carrossel-wrap">
+  <div class="carrossel-titulo">Nossos produtos</div>
+  <button class="carrossel-seta esquerda" id="setaEsquerda" aria-label="Anterior">‹</button>
+  <div class="carrossel-track" id="carrosselTrack"></div>
+  <button class="carrossel-seta direita" id="setaDireita" aria-label="Próximo">›</button>
+</div>
+
+<main>
+
+  <!-- ETAPA 1: Escolha do vidro -->
+  <div class="step">
+    <span class="step-label">Passo 1</span>
+    <h2>Escolha o tipo de vidro</h2>
+
+    <div class="banner-produto" id="bannerProduto">
+      <img id="bannerProdutoImg" src="" alt="">
+      <div class="info">
+        <div class="titulo">Produto selecionado</div>
+        <div class="nome-produto" id="bannerProdutoNome"></div>
+        <button class="trocar" id="btnTrocarProduto">Trocar produto</button>
+      </div>
+    </div>
+    <div class="aviso-whatsapp" id="avisoWhatsappBanner" style="display:none;">
+      <span>💬</span>
+      <span>Quer um modelo diferente ou mudar algo na imagem? Tire suas dúvidas, chama a gente no WhatsApp! <a id="linkWhatsappBanner" href="#" target="_blank" rel="noopener">Clique aqui</a>, teremos o prazer de te atender.</span>
+    </div>
+
+    <div class="vidro-grid" id="vidroGrid"></div>
+
+    <div class="recom-bloco">
+      <div class="recom-titulo">Você também pode gostar</div>
+      <div class="recom-subtitulo">Modelos especiais sob medida — box, espelhos e guarda-corpo</div>
+      <div class="recom-track-wrap">
+        <button class="recom-seta esquerda" id="recomSetaEsquerda" aria-label="Anterior">‹</button>
+        <div class="recom-track" id="recomTrack"></div>
+        <button class="recom-seta direita" id="recomSetaDireita" aria-label="Próximo">›</button>
+      </div>
+      <div class="recom-aviso" id="recomAviso">
+        <span>💬</span>
+        <span>Gostou de algum modelo? Peça ao profissional que for te atender para passar os dados pra produção, ou fale com a gente agora: estamos prontos pra tirar sua dúvida! <a id="linkWhatsappRecom" href="#" target="_blank" rel="noopener">Falar no WhatsApp</a></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ETAPA 2: Medidas -->
+  <div class="step">
+    <span class="step-label">Passo 2</span>
+    <h2>Informe a medida</h2>
+
+    <div class="medidas-row">
+      <div class="campo">
+        <label for="inputAltura">Altura (cm)</label>
+        <input type="number" id="inputAltura" placeholder="Ex: 80" min="0" inputmode="decimal">
+      </div>
+      <div class="campo">
+        <label for="inputLargura">Largura (cm)</label>
+        <input type="number" id="inputLargura" placeholder="Ex: 20" min="0" inputmode="decimal">
+      </div>
+    </div>
+
+    <div class="dica-medida">
+      <span>📏</span>
+      <span><strong>Altura</strong> é a medida de cima para baixo. <strong>Largura</strong> é a medida de um lado a outro. O desenho abaixo muda de posição conforme você digita, pra te ajudar a conferir.</span>
+    </div>
+
+    <div class="desenho-wrap">
+      <svg id="desenhoVidro" width="260" height="200" viewBox="0 0 260 200">
+        <!-- preenchido via JS -->
+      </svg>
+    </div>
+  </div>
+
+  <!-- ETAPA 3: Acessórios avulsos -->
+  <div class="step">
+    <span class="step-label">Passo 3</span>
+    <h2>Acessórios (opcional)</h2>
+    <div id="acessoriosList"></div>
+  </div>
+
+  <!-- ETAPA 4: Dados do cliente -->
+  <div class="step">
+    <span class="step-label">Passo 4</span>
+    <h2>Seus dados</h2>
+    <div class="medidas-row">
+      <div class="campo">
+        <label for="inputNome">Nome *</label>
+        <input type="text" id="inputNome" class="campo-texto" placeholder="Seu nome completo">
+      </div>
+      <div class="campo">
+        <label for="inputTelefone">Telefone / WhatsApp *</label>
+        <input type="tel" id="inputTelefone" class="campo-texto" placeholder="(31) 90000-0000" inputmode="tel">
+      </div>
+    </div>
+    <div class="campo">
+      <label for="inputEndereco">Endereço para entrega ou retirada (opcional)</label>
+      <input type="text" id="inputEndereco" class="campo-texto" placeholder="Rua, número, bairro, cidade">
+    </div>
+  </div>
+
+  <!-- ETAPA 5: Forma de pagamento -->
+  <div class="step">
+    <span class="step-label">Passo 5</span>
+    <h2>Forma de pagamento</h2>
+    <div class="pagamento-grid" id="pagamentoGrid"></div>
+    <div id="avisoPagamento" style="font-size:12.5px; color: var(--text-muted); margin-top:10px; display:none;"></div>
+  </div>
+
+  <!-- ETAPA 5: Resumo -->
+  <div class="step">
+    <span class="step-label">Resumo</span>
+    <h2>Seu pedido</h2>
+    <div id="resumoLinhas" style="font-size:14px; color: var(--text-muted);"></div>
+    <div class="resumo-preco">
+      <span class="label">Total estimado</span>
+      <span class="valor" id="precoTotalGrande">R$ 0,00</span>
+    </div>
+    <div class="aviso-whatsapp">
+      <span>💬</span>
+      <span>Quer mudar algo no modelo ou tirar alguma dúvida? Chama a gente no WhatsApp, temos o prazer de te atender! <a id="linkWhatsapp" href="#" target="_blank" rel="noopener">Clique aqui</a></span>
+    </div>
+    <div class="msg-status" id="msgStatus"></div>
+  </div>
+
+</main>
+
+<div class="barra-fixa">
+  <div class="barra-fixa-inner">
+    <div class="barra-total">
+      <div class="label">Total</div>
+      <div class="valor" id="precoTotalBarra">R$ 0,00</div>
+    </div>
+    <button class="btn-finalizar" id="btnFinalizar" disabled>Finalizar pedido</button>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   CONFIG - PREENCHER COM OS DADOS REAIS
+   ========================================================= */
+
+// TODO_FIREBASE_CONFIG Luciano: cola aqui o config do seu projeto Firebase
+// (Console Firebase > Configurações do projeto > Seus apps > SDK). Precisa
+// ser um Realtime Database (não Firestore) - os campos abaixo são o formato
+// exato que o console te entrega, só substituir os valores.
+const firebaseConfig = {
+  apiKey: "AIzaSyDkUcB6nEV8MbHus-O4onbd_0GNtxTYddw",
+  authDomain: "dfa-vidros-silvio.firebaseapp.com",
+  databaseURL: "https://dfa-vidros-silvio-default-rtdb.firebaseio.com",
+  projectId: "dfa-vidros-silvio",
+  storageBucket: "dfa-vidros-silvio.firebasestorage.app",
+  messagingSenderId: "438096473976",
+  appId: "1:438096473976:web:3d9f24fb8d02193284228d"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// TODO Luciano: confirmar preços reais por m² junto ao seu fornecedor
+// (valores abaixo são referência de mercado 2026, pesquisados na internet -
+// preço de vidro varia MUITO por região/fornecedor, use como ponto de partida)
+// Os caminhos de imagem já batem com os arquivos da sua pasta img/.
+// canelado e martelado ainda não têm foto na pasta -> onerror cobre isso.
+// tarja: texto curto que aparece na fita colorida sobre a foto (estilo Leroy Merlin)
+// cor: chave da paleta de tarjas (verde | azul | laranja | roxo | rosa | turquesa)
+const VIDROS = [
+  { id: "comum",     nome: "Vidro Comum",     preco_m2: 100.00, espessura_mm: 4,  img: "img/vidro-comum.jpg",     tarja: "Mais vendido",  cor: "verde" },
+  { id: "temperado", nome: "Vidro Temperado", preco_m2: 220.00, espessura_mm: 8,  img: "img/vidro-temperado.jpg", tarja: "Mais seguro",   cor: "azul" },
+  { id: "laminado",  nome: "Vidro Laminado",  preco_m2: 300.00, espessura_mm: 8,  img: "img/vidro-laminado.jpg",  tarja: "Premium",       cor: "roxo" },
+  { id: "canelado",  nome: "Vidro Canelado",  preco_m2: 120.00, espessura_mm: 4,  img: "img/vidro-canelado.jpg",  tarja: "Decorativo",    cor: "laranja" },
+  { id: "martelado", nome: "Vidro Martelado", preco_m2: 120.00, espessura_mm: 4,  img: "img/vidro-martelado.jpg", tarja: "Textura",       cor: "rosa" }
+];
+
+// Produtos em destaque no carrossel do topo. Clicando, o cliente
+// compra ESSE modelo específico seguindo o mesmo fluxo (medida,
+// acessório, pagamento) do vidro avulso - reaproveita o mesmo cálculo.
+// TODO Luciano: ajustar preco_m2 de cada modelo com o valor real.
+const PRODUTOS_DESTAQUE = [
+  { id: "box-abrir",      nome: "Box Abrir",       preco_m2: 350.00, espessura_mm: 8, img: "img/box-abrir.jpg",      tarja: "Sob medida", cor: "azul" },
+  { id: "box-articulado", nome: "Box Articulado",  preco_m2: 420.00, espessura_mm: 8, img: "img/box-articulado.jpg", tarja: "Sob medida", cor: "roxo" },
+  { id: "box-canto",      nome: "Box Canto",       preco_m2: 380.00, espessura_mm: 8, img: "img/box-canto.jpg",      tarja: "Sob medida", cor: "laranja" },
+  { id: "box-correr",     nome: "Box Correr",      preco_m2: 360.00, espessura_mm: 8, img: "img/box-correr.jpg",     tarja: "Sob medida", cor: "verde" },
+  { id: "box-elegance",   nome: "Box Elegance",    preco_m2: 480.00, espessura_mm: 8, img: "img/box-elegance.jpg",   tarja: "Premium",    cor: "roxo" },
+  { id: "box-flex",       nome: "Box Flex",        preco_m2: 450.00, espessura_mm: 8, img: "img/box-flex.jpg",       tarja: "Sob medida", cor: "turquesa" },
+  { id: "box-frontal",    nome: "Box Frontal",     preco_m2: 370.00, espessura_mm: 8, img: "img/box-frontal.jpg",    tarja: "Sob medida", cor: "azul" },
+  { id: "box-teto",       nome: "Box Teto",        preco_m2: 500.00, espessura_mm: 8, img: "img/box-teto.jpg",       tarja: "Premium",    cor: "rosa" },
+  { id: "espelho-comum",  nome: "Espelho Comum",   preco_m2: 130.00, espessura_mm: 4, img: "img/espelho-comum.jpg",  tarja: "Popular",    cor: "verde" },
+  { id: "espelho-decorativo", nome: "Espelho Decorativo", preco_m2: 220.00, espessura_mm: 4, img: "img/espelho-decorativo.jpg", tarja: "Decorativo", cor: "rosa" },
+  { id: "espelho-lapidado", nome: "Espelho Lapidado", preco_m2: 180.00, espessura_mm: 4, img: "img/espelho-lapidado.jpg", tarja: "Acabamento fino", cor: "turquesa" },
+  { id: "espelho-sob-medida", nome: "Espelho Sob Medida", preco_m2: 200.00, espessura_mm: 4, img: "img/espelho-sob-medida.jpg", tarja: "Sob medida", cor: "azul" },
+  { id: "guarda-corpo",   nome: "Guarda-Corpo",    preco_m2: 340.00, espessura_mm: 10, img: "img/guarda-corpo.jpg", tarja: "Segurança",  cor: "laranja" }
+];
+
+// TODO Luciano: trocar pelo número real do WhatsApp da loja (com DDI+DDD, só números)
+const WHATSAPP_NUMERO = "55SEUNUMERO";
+
+// TODO Luciano: confirmar preços reais por unidade (valores abaixo são placeholder)
+const ACESSORIOS = [
+  { id: "puxador-concha",   nome: "Puxador Concha",     preco_unit: 28.00, img: "img/puxador-concha.jpg" },
+  { id: "puxador-h",        nome: "Puxador H",          preco_unit: 45.00, img: "img/puxador-h.jpg" },
+  { id: "roldana-superior", nome: "Roldana Superior",   preco_unit: 22.00, img: "img/roldana-superior.jpg" },
+  { id: "roldana-inferior", nome: "Roldana Inferior",   preco_unit: 22.00, img: "img/roldana-inferior.jpg" },
+  { id: "dobradica",        nome: "Dobradiça",          preco_unit: 32.00, img: "img/dobradica.jpg" },
+  { id: "silicone",         nome: "Silicone",           preco_unit: 18.00, img: "img/silicone.jpg" },
+  { id: "vedacao",          nome: "Vedação",            preco_unit: 15.00, img: "img/vedacao.jpg" },
+  { id: "fechamento-pia",   nome: "Fechamento de Pia",  preco_unit: 60.00, img: "img/fechamento-pia.jpg" }
+];
+
+/* =========================================================
+   ESTADO
+   ========================================================= */
+
+const estado = {
+  vidroSelecionado: null,
+  altura: 0,
+  largura: 0,
+  acessorios: {}, // { id: qtd }
+  cliente: { nome: "", telefone: "", endereco: "" },
+  formaPagamento: null // "pix" | "cartao" | "dinheiro"
+};
+
+// Config das formas de pagamento aceitas.
+// "requer_link" indica que essa forma precisa gerar um link de pagamento
+// externo (gateway) antes de confirmar - ver função gerarLinkPagamento().
+const FORMAS_PAGAMENTO = [
+  { id: "pix",      nome: "PIX",              icone: "💠", desc: "Chave enviada após confirmar", requer_link: false },
+  { id: "cartao",   nome: "Cartão",           icone: "💳", desc: "Link de pagamento seguro",      requer_link: true },
+  { id: "dinheiro", nome: "Dinheiro no local", icone: "💵", desc: "Pagamento na retirada",          requer_link: false }
+];
+
+/* =========================================================
+   CARROSSEL DE PRODUTOS EM DESTAQUE
+   ========================================================= */
+
+const carrosselTrack = document.getElementById("carrosselTrack");
+
+function renderCarrossel() {
+  carrosselTrack.innerHTML = "";
+  PRODUTOS_DESTAQUE.forEach(p => {
+    const item = document.createElement("div");
+    item.className = "carrossel-item";
+    item.innerHTML = `
+      <img src="${p.img}" alt="${p.nome}" onerror="this.style.background='#EFEFEA'; this.src='';">
+      <div class="nome">${p.nome}</div>
+      <div class="preco-partir">a partir de <strong>R$ ${p.preco_m2.toFixed(2)}</strong>/m²</div>
+      <div class="comprar">Comprar este →</div>
+    `;
+    item.addEventListener("click", () => selecionarProdutoCarrossel(p));
+    carrosselTrack.appendChild(item);
+  });
+}
+
+const bannerProduto = document.getElementById("bannerProduto");
+const bannerProdutoImg = document.getElementById("bannerProdutoImg");
+const bannerProdutoNome = document.getElementById("bannerProdutoNome");
+const vidroGridEl = document.getElementById("vidroGrid");
+
+function selecionarProdutoCarrossel(p) {
+  // reaproveita a mesma estrutura do vidro avulso: mesmo cálculo,
+  // mesmas etapas de medida, acessório e pagamento
+  estado.vidroSelecionado = {
+    id: p.id,
+    nome: p.nome,
+    preco_m2: p.preco_m2,
+    espessura_mm: p.espessura_mm,
+    img: p.img,
+    origem: "carrossel"
+  };
+
+  bannerProdutoImg.src = p.img;
+  bannerProdutoNome.textContent = p.nome;
+  bannerProduto.classList.add("ativo");
+  vidroGridEl.style.display = "none";
+  document.getElementById("avisoWhatsappBanner").style.display = "flex";
+
+  document.getElementById("bannerProduto").scrollIntoView({ behavior: "smooth", block: "center" });
+  atualizarTudo();
+}
+
+document.getElementById("btnTrocarProduto").addEventListener("click", () => {
+  estado.vidroSelecionado = null;
+  bannerProduto.classList.remove("ativo");
+  vidroGridEl.style.display = "grid";
+  document.getElementById("avisoWhatsappBanner").style.display = "none";
+  renderVidros();
+  atualizarTudo();
+});
+
+document.getElementById("setaEsquerda").addEventListener("click", () => {
+  carrosselTrack.scrollBy({ left: -430, behavior: "smooth" });
+});
+
+document.getElementById("setaDireita").addEventListener("click", () => {
+  carrosselTrack.scrollBy({ left: 430, behavior: "smooth" });
+});
+
+renderCarrossel();
+
+document.getElementById("linkWhatsapp").href = "https://wa.me/" + WHATSAPP_NUMERO;
+document.getElementById("linkWhatsappBanner").href = "https://wa.me/" + WHATSAPP_NUMERO;
+document.getElementById("linkWhatsappRecom").href = "https://wa.me/" + WHATSAPP_NUMERO;
+
+/* =========================================================
+   "VOCÊ TAMBÉM PODE GOSTAR" (dentro do Passo 1)
+   Modelos sob medida (box, espelhos, guarda-corpo). Aqui o
+   cliente NÃO entra no fluxo de cálculo automático - o pedido
+   é feito com o profissional ou via WhatsApp, porque esses
+   modelos costumam precisar de medição e detalhes no local.
+   ========================================================= */
+
+const recomTrack = document.getElementById("recomTrack");
+const recomAviso = document.getElementById("recomAviso");
+
+function renderRecomendados() {
+  recomTrack.innerHTML = "";
+  PRODUTOS_DESTAQUE.forEach(p => {
+    const card = document.createElement("div");
+    card.className = "recom-card";
+    card.innerHTML = `
+      <div class="foto-wrap">
+        <img src="${p.img}" alt="${p.nome}" onerror="this.style.background='#EFEFEA'; this.src='';">
+        <span class="tarja" style="background: var(--tag-${p.cor});">${p.tarja}</span>
+      </div>
+      <div class="info">
+        <div class="nome">${p.nome}</div>
+        <div class="preco-linha">a partir de <strong>R$ ${p.preco_m2.toFixed(2)}</strong>/m²</div>
+        <button class="btn-quero" type="button">Quero este</button>
+      </div>
+    `;
+    card.querySelector(".btn-quero").addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      mostrarAvisoRecom();
+    });
+    card.addEventListener("click", () => mostrarAvisoRecom());
+    recomTrack.appendChild(card);
+  });
+}
+
+function mostrarAvisoRecom() {
+  recomAviso.scrollIntoView({ behavior: "smooth", block: "center" });
+  recomAviso.classList.add("destaque");
+  setTimeout(() => recomAviso.classList.remove("destaque"), 1600);
+}
+
+document.getElementById("recomSetaEsquerda").addEventListener("click", () => {
+  recomTrack.scrollBy({ left: -320, behavior: "smooth" });
+});
+
+document.getElementById("recomSetaDireita").addEventListener("click", () => {
+  recomTrack.scrollBy({ left: 320, behavior: "smooth" });
+});
+
+renderRecomendados();
+
+/* =========================================================
+   RENDER: cards de vidro
+   ========================================================= */
+
+const vidroGrid = document.getElementById("vidroGrid");
+
+function renderVidros() {
+  vidroGrid.innerHTML = "";
+  VIDROS.forEach(v => {
+    const card = document.createElement("div");
+    card.className = "vidro-card" + (estado.vidroSelecionado?.id === v.id ? " selected" : "");
+    card.innerHTML = `
+      <div class="foto-wrap">
+        <img src="${v.img}" alt="${v.nome}" onerror="this.style.background='#EFEFEA'; this.src='';">
+        <span class="tarja" style="background: var(--tag-${v.cor});">${v.tarja}</span>
+        <span class="check">✓</span>
+      </div>
+      <div class="info">
+        <div class="nome">${v.nome}</div>
+        <div class="espessura">Espessura ${v.espessura_mm}mm</div>
+        <div class="preco-linha">
+          <span class="preco" style="color: var(--tag-${v.cor});">R$ ${v.preco_m2.toFixed(2)}</span>
+          <span class="preco-unid">/ m²</span>
+        </div>
+      </div>
+    `;
+    card.addEventListener("click", () => {
+      estado.vidroSelecionado = v;
+      renderVidros();
+      atualizarTudo();
+    });
+    vidroGrid.appendChild(card);
+  });
+}
+
+/* =========================================================
+   RENDER: acessórios
+   ========================================================= */
+
+const acessoriosList = document.getElementById("acessoriosList");
+
+function renderAcessorios() {
+  acessoriosList.innerHTML = "";
+  ACESSORIOS.forEach(a => {
+    const qtd = estado.acessorios[a.id] || 0;
+    const row = document.createElement("div");
+    row.className = "acessorio-row";
+    row.innerHTML = `
+      <div style="display:flex; align-items:center; gap:10px;">
+        <img src="${a.img}" alt="${a.nome}" style="width:40px; height:40px; object-fit:cover; border-radius:6px; background:#EFEFEA;" onerror="this.style.background='#EFEFEA'; this.src='';">
+        <div>
+          <div class="acessorio-nome">${a.nome}</div>
+          <div class="acessorio-preco">R$ ${a.preco_unit.toFixed(2)} / unidade</div>
+        </div>
+      </div>
+      <div class="qtd-control">
+        <button class="qtd-btn" data-acao="menos" data-id="${a.id}">−</button>
+        <span class="qtd-val">${qtd}</span>
+        <button class="qtd-btn" data-acao="mais" data-id="${a.id}">+</button>
+      </div>
+    `;
+    acessoriosList.appendChild(row);
+  });
+
+  acessoriosList.querySelectorAll(".qtd-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.id;
+      const acao = btn.dataset.acao;
+      const atual = estado.acessorios[id] || 0;
+      if (acao === "mais") {
+        estado.acessorios[id] = atual + 1;
+      } else {
+        estado.acessorios[id] = Math.max(0, atual - 1);
+      }
+      renderAcessorios();
+      atualizarTudo();
+    });
+  });
+}
+
+/* =========================================================
+   RENDER: forma de pagamento
+   ========================================================= */
+
+const pagamentoGrid = document.getElementById("pagamentoGrid");
+const avisoPagamento = document.getElementById("avisoPagamento");
+
+function renderPagamento() {
+  pagamentoGrid.innerHTML = "";
+  FORMAS_PAGAMENTO.forEach(f => {
+    const card = document.createElement("div");
+    card.className = "pagamento-card" + (estado.formaPagamento === f.id ? " selected" : "");
+    card.innerHTML = `
+      <div class="icone">${f.icone}</div>
+      <div class="nome">${f.nome}</div>
+      <div class="desc">${f.desc}</div>
+    `;
+    card.addEventListener("click", () => {
+      estado.formaPagamento = f.id;
+      renderPagamento();
+      atualizarTudo();
+    });
+    pagamentoGrid.appendChild(card);
+  });
+
+  const selecionada = FORMAS_PAGAMENTO.find(f => f.id === estado.formaPagamento);
+  if (selecionada && selecionada.requer_link) {
+    avisoPagamento.style.display = "block";
+    avisoPagamento.textContent = "Ao finalizar, você será redirecionado para um link de pagamento seguro. O pedido só é enviado pra produção depois da confirmação do pagamento.";
+  } else {
+    avisoPagamento.style.display = "none";
+  }
+}
+
+/* =========================================================
+   DESENHO PROPORCIONAL (SVG)
+   Regra do cliente: a orientação do retângulo no desenho
+   segue a proporção real entre altura e largura digitadas.
+   ========================================================= */
+
+const svgEl = document.getElementById("desenhoVidro");
+const SVG_W = 260;
+const SVG_H = 200;
+const PADDING = 30;
+
+function desenharVidro(alturaCm, larguraCm) {
+  svgEl.innerHTML = "";
+
+  if (!alturaCm || !larguraCm || alturaCm <= 0 || larguraCm <= 0) {
+    // placeholder neutro
+    svgEl.innerHTML = `
+      <text x="${SVG_W/2}" y="${SVG_H/2}" text-anchor="middle"
+        font-size="13" fill="#B5B2AA">Digite altura e largura</text>
+    `;
+    return;
+  }
+
+  const areaMaxW = SVG_W - PADDING * 2;
+  const areaMaxH = SVG_H - PADDING * 2;
+
+  // mantém a proporção real entre altura e largura,
+  // escalando pra caber na área disponível do desenho
+  const escala = Math.min(areaMaxW / larguraCm, areaMaxH / alturaCm);
+  const wPx = larguraCm * escala;
+  const hPx = alturaCm * escala;
+
+  const x = (SVG_W - wPx) / 2;
+  const y = (SVG_H - hPx) / 2;
+
+  svgEl.innerHTML = `
+    <rect x="${x}" y="${y}" width="${wPx}" height="${hPx}"
+      fill="#E9F3E8" stroke="#4C8C4A" stroke-width="2" rx="3" />
+    <!-- seta de altura -->
+    <line x1="${x - 14}" y1="${y}" x2="${x - 14}" y2="${y + hPx}"
+      stroke="#6B6B63" stroke-width="1.2" marker-start="url(#seta)" marker-end="url(#seta)" />
+    <text x="${x - 20}" y="${y + hPx/2}" text-anchor="middle" font-size="12"
+      fill="#6B6B63" transform="rotate(-90 ${x-20} ${y+hPx/2})">${alturaCm} cm</text>
+    <!-- seta de largura -->
+    <line x1="${x}" y1="${y + hPx + 14}" x2="${x + wPx}" y2="${y + hPx + 14}"
+      stroke="#6B6B63" stroke-width="1.2" marker-start="url(#seta)" marker-end="url(#seta)" />
+    <text x="${x + wPx/2}" y="${y + hPx + 30}" text-anchor="middle" font-size="12"
+      fill="#6B6B63">${larguraCm} cm</text>
+    <defs>
+      <marker id="seta" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+        <path d="M0,0 L8,4 L0,8 Z" fill="#6B6B63"/>
+      </marker>
+    </defs>
+  `;
+}
+
+/* =========================================================
+   CÁLCULO DE PREÇO
+   ========================================================= */
+
+function calcularPreco() {
+  let total = 0;
+  const linhas = [];
+
+  if (estado.vidroSelecionado && estado.altura > 0 && estado.largura > 0) {
+    const areaM2 = (estado.altura / 100) * (estado.largura / 100);
+    const precoVidro = areaM2 * estado.vidroSelecionado.preco_m2;
+    total += precoVidro;
+    linhas.push(`${estado.vidroSelecionado.nome} — ${estado.altura}cm × ${estado.largura}cm (${areaM2.toFixed(2)} m²): R$ ${precoVidro.toFixed(2)}`);
+  }
+
+  ACESSORIOS.forEach(a => {
+    const qtd = estado.acessorios[a.id] || 0;
+    if (qtd > 0) {
+      const sub = qtd * a.preco_unit;
+      total += sub;
+      linhas.push(`${a.nome} × ${qtd}: R$ ${sub.toFixed(2)}`);
+    }
+  });
+
+  return { total, linhas };
+}
+
+/* =========================================================
+   ATUALIZAÇÃO GERAL DA TELA
+   ========================================================= */
+
+const resumoLinhas = document.getElementById("resumoLinhas");
+const precoTotalGrande = document.getElementById("precoTotalGrande");
+const precoTotalBarra = document.getElementById("precoTotalBarra");
+const btnFinalizar = document.getElementById("btnFinalizar");
+
+function atualizarTudo() {
+  desenharVidro(estado.altura, estado.largura);
+
+  const { total, linhas } = calcularPreco();
+
+  resumoLinhas.innerHTML = linhas.length
+    ? linhas.map(l => `<div style="padding:3px 0;">${l}</div>`).join("")
+    : `<div style="color:#B5B2AA;">Escolha o vidro e informe a medida</div>`;
+
+  const totalFmt = "R$ " + total.toFixed(2).replace(".", ",");
+  precoTotalGrande.textContent = totalFmt;
+  precoTotalBarra.textContent = totalFmt;
+
+  const pedidoValido = estado.vidroSelecionado && estado.altura > 0 && estado.largura > 0
+    && estado.cliente.nome.trim() && estado.cliente.telefone.trim()
+    && estado.formaPagamento;
+  btnFinalizar.disabled = !pedidoValido;
+}
+
+/* =========================================================
+   EVENTOS DE MEDIDA
+   ========================================================= */
+
+document.getElementById("inputAltura").addEventListener("input", (e) => {
+  estado.altura = parseFloat(e.target.value) || 0;
+  atualizarTudo();
+});
+
+document.getElementById("inputLargura").addEventListener("input", (e) => {
+  estado.largura = parseFloat(e.target.value) || 0;
+  atualizarTudo();
+});
+
+/* =========================================================
+   EVENTOS - DADOS DO CLIENTE
+   ========================================================= */
+
+document.getElementById("inputNome").addEventListener("input", (e) => {
+  estado.cliente.nome = e.target.value;
+  atualizarTudo();
+});
+
+document.getElementById("inputTelefone").addEventListener("input", (e) => {
+  estado.cliente.telefone = e.target.value;
+  atualizarTudo();
+});
+
+document.getElementById("inputEndereco").addEventListener("input", (e) => {
+  estado.cliente.endereco = e.target.value;
+});
+
+/* =========================================================
+   LINK DE PAGAMENTO (CARTÃO)
+   Gancho pronto pra plugar o gateway escolhido (Mercado Pago
+   Checkout Pro, PagSeguro ou Stripe Checkout).
+   O ideal é essa chamada ir pro SEU backend (api.py), que gera
+   a sessão de pagamento com a chave secreta do gateway e devolve
+   só a URL de checkout aqui pro navegador - a chave nunca fica
+   exposta no código do app.
+   ========================================================= */
+
+async function gerarLinkPagamento(pedido) {
+  // TODO Luciano: trocar pela chamada real ao seu backend, ex:
+  // const resp = await fetch("https://SEU_BACKEND/gerar-pagamento", {
+  //   method: "POST",
+  //   headers: { "Content-Type": "application/json" },
+  //   body: JSON.stringify({ valor: pedido.preco_total, pedido_id: pedido._id })
+  // });
+  // const { checkout_url } = await resp.json();
+  // return checkout_url;
+
+  console.warn("gerarLinkPagamento: integração com gateway ainda não configurada.");
+  return null;
+}
+
+/* =========================================================
+   FINALIZAR PEDIDO -> ENVIA PRA API FLASK (api.py)
+   Formato dos itens (productType + config) é o MESMO que o
+   dfa_sistema.py já espera (função format_config_lines), pra
+   aparecer certinho na produção: corte, espessura, modelo etc.
+   ========================================================= */
+
+const msgStatus = document.getElementById("msgStatus");
+
+function montarItemVidro(total) {
+  const areaM2 = (estado.altura / 100) * (estado.largura / 100);
+  return {
+    id: "ci_" + Date.now().toString(36),
+    productId: estado.vidroSelecionado.id,
+    productName: estado.vidroSelecionado.nome,
+    productCat: "vidros",
+    productType: "glass",
+    config: {
+      // dfa_sistema.py trabalha as medidas em milímetros
+      width: Math.round(estado.largura * 10),
+      height: Math.round(estado.altura * 10),
+      thickness: estado.vidroSelecionado.espessura_mm,
+      color: "incolor",
+      finish: "",
+      cuts: 0,
+      holes: 0
+    },
+    unit: "m2",
+    qty: 1,
+    area_m2: areaM2,
+    subtotal: areaM2 * estado.vidroSelecionado.preco_m2,
+    weight: 0
+  };
+}
+
+function montarItensAcessorios() {
+  return ACESSORIOS
+    .filter(a => (estado.acessorios[a.id] || 0) > 0)
+    .map(a => {
+      const qtd = estado.acessorios[a.id];
+      return {
+        id: "ci_" + a.id + "_" + Date.now().toString(36),
+        productId: a.id,
+        productName: a.nome,
+        productCat: "acessorios",
+        productType: "acessorio",
+        config: {},
+        unit: "un",
+        qty: qtd,
+        subtotal: qtd * a.preco_unit,
+        weight: 0
+      };
+    });
+}
+
+async function finalizarPedido() {
+  btnFinalizar.disabled = true;
+  btnFinalizar.textContent = "Enviando...";
+
+  const { total } = calcularPreco();
+  const agora = new Date().toISOString();
+
+  const pedido = {
+    id: "PED-" + Date.now().toString(36).toUpperCase(),
+    date: agora,
+    name: estado.cliente.nome.trim(),
+    phone: estado.cliente.telefone.trim(),
+    addr: estado.cliente.endereco.trim(),
+    doc: "", email: "", cep: "", num: "", bairro: "", city: "",
+    complemento: "", reference: "", pref_date: "",
+    obs: "",
+    delivery: estado.cliente.endereco.trim() ? "entrega" : "retirada",
+    payment: estado.formaPagamento,
+    items: [montarItemVidro(total), ...montarItensAcessorios()],
+    totals: { subtotal: total, volumeDiscount: 0, delivery: 0, total: total },
+    status: "recebido",
+    statusHistory: [{ status: "recebido", at: agora }],
+    isPro: false,
+    customerId: ""
+  };
+
+  try {
+    // Grava o pedido no Realtime Database em /pedidos/{id}. O painel da
+    // loja (dfa-admin.html) escuta esse mesmo nó em tempo real.
+    await db.ref("pedidos/" + pedido.id).set(pedido);
+
+    const formaSelecionada = FORMAS_PAGAMENTO.find(f => f.id === estado.formaPagamento);
+    if (formaSelecionada.requer_link) {
+      // cartão: gera o link de pagamento e redireciona o cliente
+      const checkoutUrl = await gerarLinkPagamento(pedido);
+      if (checkoutUrl) {
+        msgStatus.className = "msg-status ok";
+        msgStatus.textContent = "Redirecionando para o pagamento...";
+        window.location.href = checkoutUrl;
+        return;
+      } else {
+        msgStatus.className = "msg-status erro";
+        msgStatus.textContent = "Pedido salvo, mas o link de pagamento ainda não está configurado. Fale com a loja pra concluir.";
+        btnFinalizar.textContent = "Finalizar pedido";
+        btnFinalizar.disabled = false;
+        return;
+      }
+    }
+
+    msgStatus.className = "msg-status ok";
+    msgStatus.textContent = "Pedido enviado! Nº " + pedido.id;
+    btnFinalizar.textContent = "Pedido enviado ✓";
+  } catch (err) {
+    msgStatus.className = "msg-status erro";
+    msgStatus.textContent = "Não foi possível enviar o pedido. Confira sua conexão com a internet e tente de novo.";
+    btnFinalizar.disabled = false;
+    btnFinalizar.textContent = "Finalizar pedido";
+    console.error(err);
+  }
+}
+
+btnFinalizar.addEventListener("click", finalizarPedido);
+
+/* =========================================================
+   INIT
+   ========================================================= */
+
+renderVidros();
+renderAcessorios();
+renderPagamento();
+atualizarTudo();
+
+</script>
+
+</body>
+</html>
