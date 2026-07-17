@@ -1284,8 +1284,9 @@ function calcularPreco() {
   let total = 0;
   const linhas = [];
 
-  if (estado.vidroSelecionado && estado.altura > 0 && estado.largura > 0 && !estado.erroAltura && !estado.erroLargura) {
-    const areaM2 = (estado.altura / 1000) * (estado.largura / 1000); // Agora em MM
+  // Calcula o vidro sempre que tiver medida > 0, independente de erro
+  if (estado.vidroSelecionado && estado.altura > 0 && estado.largura > 0) {
+    const areaM2 = (estado.altura / 1000) * (estado.largura / 1000);
     const precoVidro = areaM2 * estado.vidroSelecionado.preco_m2;
     total += precoVidro;
     linhas.push(`${estado.vidroSelecionado.nome} — ${estado.altura}mm × ${estado.largura}mm (${areaM2.toFixed(2)} m²): R$ ${precoVidro.toFixed(2)}`);
@@ -1302,7 +1303,6 @@ function calcularPreco() {
 
   return { total, linhas };
 }
-
 /* =========================================================
    ATUALIZAÇÃO GERAL
    ========================================================= */
