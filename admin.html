@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DFA Vidraçaria — Painel da Loja</title>
+<title>DFA SmartGlass — Painel da Loja</title>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <style>
@@ -42,7 +42,6 @@
 
   .layout { display: flex; min-height: 100vh; }
 
-  /* --- Sidebar --- */
   .sidebar {
     width: 230px;
     flex-shrink: 0;
@@ -59,17 +58,8 @@
     margin-bottom: 10px;
   }
 
-  .sidebar .marca .nome {
-    font-size: 17px;
-    font-weight: 700;
-    color: #fff;
-  }
-
-  .sidebar .marca .sub {
-    font-size: 12px;
-    color: rgba(255,255,255,0.55);
-    margin-top: 2px;
-  }
+  .sidebar .marca .nome { font-size: 17px; font-weight: 700; color: #fff; }
+  .sidebar .marca .sub { font-size: 12px; color: rgba(255,255,255,0.55); margin-top: 2px; }
 
   .nav-item {
     display: flex;
@@ -84,267 +74,84 @@
   }
 
   .nav-item:hover { background: var(--bg-side-hover); }
-
-  .nav-item.ativo {
-    background: var(--bg-side-hover);
-    border-left-color: var(--accent);
-    color: #fff;
-    font-weight: 600;
-  }
-
-  .nav-item.desabilitado {
-    opacity: 0.4;
-    cursor: default;
-  }
-
+  .nav-item.ativo { background: var(--bg-side-hover); border-left-color: var(--accent); color: #fff; font-weight: 600; }
+  .nav-item.desabilitado { opacity: 0.4; cursor: default; }
   .nav-item.desabilitado:hover { background: transparent; }
+  .sidebar .versao { margin-top: auto; padding: 14px 20px 0; font-size: 11px; color: rgba(255,255,255,0.35); }
 
-  .sidebar .versao {
-    margin-top: auto;
-    padding: 14px 20px 0;
-    font-size: 11px;
-    color: rgba(255,255,255,0.35);
-  }
-
-  /* --- Conteúdo --- */
   .content { flex: 1; padding: 26px 30px; max-width: 1280px; }
-
-  .content h1 {
-    margin: 0;
-    font-size: 20px;
-    font-weight: 700;
-  }
-
-  .content .subt {
-    margin: 3px 0 20px;
-    font-size: 13px;
-    color: var(--text-muted);
-  }
+  .content h1 { margin: 0; font-size: 20px; font-weight: 700; }
+  .content .subt { margin: 3px 0 20px; font-size: 13px; color: var(--text-muted); }
 
   .view { display: none; }
   .view.ativa { display: block; }
 
-  /* --- Cards de métrica --- */
-  .cards-metricas {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 12px;
-    margin-bottom: 26px;
-  }
-
-  .metrica {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-    padding: 16px 18px;
-  }
-
-  .metrica .rotulo {
-    font-size: 12px;
-    color: var(--text-muted);
-  }
-
-  .metrica .valor {
-    font-size: 26px;
-    font-weight: 700;
-    margin-top: 6px;
-    color: var(--accent-dark);
-  }
-
+  .cards-metricas { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 26px; }
+  .metrica { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px 18px; }
+  .metrica .rotulo { font-size: 12px; color: var(--text-muted); }
+  .metrica .valor { font-size: 26px; font-weight: 700; margin-top: 6px; color: var(--accent-dark); }
   .metrica .valor.danger { color: var(--danger); }
 
-  /* --- Pipeline --- */
-  h2.secao {
-    font-size: 15px;
-    font-weight: 700;
-    margin: 26px 0 12px;
-  }
-
-  .pipeline {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
-  }
-
-  .pipe-card {
-    border-radius: var(--radius);
-    padding: 14px 16px;
-    color: #fff;
-  }
-
+  h2.secao { font-size: 15px; font-weight: 700; margin: 26px 0 12px; }
+  .pipeline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .pipe-card { border-radius: var(--radius); padding: 14px 16px; color: #fff; }
   .pipe-card .rotulo { font-size: 13px; font-weight: 700; }
   .pipe-card .valor { font-size: 24px; font-weight: 700; margin-top: 4px; }
 
-  /* --- Lista últimos pedidos (dashboard) --- */
-  .lista-simples {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-    overflow: hidden;
-  }
-
-  .lista-simples .linha {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 10px 16px;
-    border-bottom: 1px solid var(--border);
-    font-size: 13px;
-  }
-
+  .lista-simples { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+  .lista-simples .linha { display: flex; align-items: center; gap: 14px; padding: 10px 16px; border-bottom: 1px solid var(--border); font-size: 13px; }
   .lista-simples .linha:last-child { border-bottom: none; }
   .lista-simples .linha .id { color: var(--accent-dark); font-weight: 700; width: 110px; flex-shrink: 0; }
   .lista-simples .linha .nome { flex: 1; }
   .lista-simples .linha .total { font-weight: 700; color: var(--accent-dark); }
 
-  .badge-status {
-    display: inline-block;
-    font-size: 11px;
-    font-weight: 700;
-    padding: 3px 9px;
-    border-radius: 20px;
-    color: #fff;
-  }
+  .badge-status { display: inline-block; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 20px; color: #fff; }
 
-  /* --- View Pedidos --- */
-  .pedidos-toolbar {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 14px;
-    flex-wrap: wrap;
-  }
-
-  .pedidos-toolbar input, .pedidos-toolbar select {
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 8px 12px;
-    font-size: 13px;
-    font-family: inherit;
-    background: var(--bg-card);
-    color: var(--text);
-  }
-
+  .pedidos-toolbar { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+  .pedidos-toolbar input, .pedidos-toolbar select { border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 13px; font-family: inherit; background: var(--bg-card); color: var(--text); }
   .pedidos-toolbar input { flex: 1; min-width: 180px; }
 
-  .pedidos-body {
-    display: flex;
-    gap: 16px;
-    align-items: flex-start;
-  }
+  .pedidos-body { display: flex; gap: 16px; align-items: flex-start; }
+  .pedidos-lista { width: 360px; flex-shrink: 0; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); max-height: 72vh; overflow-y: auto; }
 
-  .pedidos-lista {
-    width: 360px;
-    flex-shrink: 0;
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-    max-height: 72vh;
-    overflow-y: auto;
-  }
-
-  .pedido-item {
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--border);
-    cursor: pointer;
-  }
-
+  .pedido-item { padding: 12px 16px; border-bottom: 1px solid var(--border); cursor: pointer; }
   .pedido-item:last-child { border-bottom: none; }
   .pedido-item:hover { background: var(--accent-light); }
   .pedido-item.selecionado { background: var(--accent-light); border-left: 3px solid var(--accent); }
-
   .pedido-item .topo { display: flex; justify-content: space-between; font-size: 13px; font-weight: 700; }
   .pedido-item .cliente { font-size: 12.5px; color: var(--text-muted); margin-top: 2px; }
   .pedido-item .hora { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
 
-  .pedido-detalhe {
-    flex: 1;
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-    padding: 22px;
-    min-height: 300px;
-  }
-
+  .pedido-detalhe { flex: 1; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 22px; min-height: 300px; }
   .pedido-detalhe .vazio { color: var(--text-muted); text-align: center; padding: 60px 0; font-size: 14px; }
 
   .det-topo { display: flex; justify-content: space-between; align-items: center; }
   .det-topo h3 { margin: 0; font-size: 18px; }
   .det-hora { font-size: 12px; color: var(--text-muted); margin: 3px 0 18px; }
+  .det-secao { font-size: 11.5px; font-weight: 700; color: var(--text-muted); letter-spacing: 0.03em; text-transform: uppercase; margin: 18px 0 6px; }
 
-  .det-secao {
-    font-size: 11.5px;
-    font-weight: 700;
-    color: var(--text-muted);
-    letter-spacing: 0.03em;
-    text-transform: uppercase;
-    margin: 18px 0 6px;
-  }
-
-  .item-card {
-    background: var(--accent-light);
-    border-radius: 8px;
-    padding: 10px 14px;
-    margin-bottom: 6px;
-  }
-
+  .item-card { background: var(--accent-light); border-radius: 8px; padding: 10px 14px; margin-bottom: 6px; }
   .item-card .nome-item { font-weight: 700; font-size: 13.5px; }
   .item-card .linha-conf { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
   .item-card .subtotal { text-align: right; font-size: 12.5px; color: var(--accent-dark); font-weight: 700; margin-top: 4px; }
 
   .det-total { font-size: 22px; font-weight: 700; margin-top: 6px; }
-
   .det-acoes { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
 
-  .btn {
-    border: none;
-    border-radius: 8px;
-    padding: 10px 16px;
-    font-size: 13.5px;
-    font-weight: 700;
-    cursor: pointer;
-    font-family: inherit;
-  }
-
+  .btn { border: none; border-radius: 8px; padding: 10px 16px; font-size: 13.5px; font-weight: 700; cursor: pointer; font-family: inherit; }
   .btn-primario { background: var(--accent); color: #fff; }
   .btn-primario:hover { background: var(--accent-dark); }
+  .btn-primario:disabled { background: #C9C6BE; cursor: not-allowed; }
   .btn-secundario { background: var(--bg); border: 1px solid var(--border); color: var(--text); }
   .btn-secundario:hover { border-color: var(--accent); }
 
-  .placeholder-view {
-    background: var(--bg-card);
-    border: 1px dashed var(--border);
-    border-radius: var(--radius);
-    padding: 60px 20px;
-    text-align: center;
-    color: var(--text-muted);
-  }
+  .placeholder-view { background: var(--bg-card); border: 1px dashed var(--border); border-radius: var(--radius); padding: 60px 20px; text-align: center; color: var(--text-muted); }
 
-  .alerta-config {
-    background: #FBEEE0;
-    border: 1px solid #E8C79A;
-    border-radius: var(--radius);
-    padding: 14px 18px;
-    margin-bottom: 20px;
-    font-size: 13px;
-    color: #7A4A0E;
-  }
+  .alerta-config { background: #FBEEE0; border: 1px solid #E8C79A; border-radius: var(--radius); padding: 14px 18px; margin-bottom: 20px; font-size: 13px; color: #7A4A0E; }
 
   .topo-view { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
-  .input-largo {
-    width: 100%;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 9px 12px;
-    font-size: 13px;
-    font-family: inherit;
-    margin: 12px 0 16px;
-  }
+  .input-largo { width: 100%; border: 1px solid var(--border); border-radius: 8px; padding: 9px 12px; font-size: 13px; font-family: inherit; margin: 12px 0 16px; }
 
-  /* --- Kanban (Produção) --- */
   .kanban { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; align-items: start; }
   .kanban-col { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
   .kanban-col .cabecalho { padding: 10px 12px; font-weight: 700; font-size: 13px; color: #fff; }
@@ -356,54 +163,48 @@
   .kanban-card button { width: 100%; margin-top: 8px; }
   .kanban-vazio { text-align: center; color: var(--text-muted); font-size: 12px; padding: 14px 0; }
 
-  /* --- Formulários (Nova Venda, modais) --- */
-  .form-venda { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 22px; max-width: 720px; }
+  .form-venda { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 22px; max-width: 900px; }
   .linha-form { display: flex; gap: 14px; margin-bottom: 4px; flex-wrap: wrap; }
   .campo { flex: 1; min-width: 160px; display: flex; flex-direction: column; gap: 4px; }
   .campo label { font-size: 12px; color: var(--text-muted); font-weight: 600; }
   .campo input, .campo select { border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 13.5px; font-family: inherit; }
 
-  /* --- Autocomplete (cliente / produto) --- */
-  .autocomplete-wrap { position: relative; }
-  .autocomplete-list {
-    display: none;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    box-shadow: var(--shadow);
-    max-height: 220px;
-    overflow-y: auto;
-    z-index: 30;
-    margin-top: 3px;
-  }
-  .autocomplete-list.aberta { display: block; }
-  .autocomplete-item { padding: 8px 12px; cursor: pointer; font-size: 13px; border-bottom: 1px solid var(--border); }
-  .autocomplete-item:last-child { border-bottom: none; }
-  .autocomplete-item:hover, .autocomplete-item.destaque { background: var(--accent-light); }
-  .autocomplete-item .principal { font-weight: 600; }
-  .autocomplete-item .secundario { font-size: 11.5px; color: var(--text-muted); margin-top: 1px; }
-  .autocomplete-vazio { padding: 10px 12px; font-size: 12.5px; color: var(--text-muted); }
+  .venda-secao-tit { font-size: 14px; font-weight: 700; margin: 22px 0 10px; padding-top: 16px; border-top: 1px dashed var(--border); }
+  .venda-secao-tit:first-of-type { border-top: none; padding-top: 0; margin-top: 0; }
 
-  .aviso-cliente { font-size: 12.5px; padding: 8px 12px; border-radius: 8px; margin: -4px 0 14px; }
-  .aviso-cliente.existente { background: var(--accent-light); color: var(--accent-dark); }
-  .aviso-cliente.novo { background: #FBEEE0; color: #7A4A0E; }
+  .catalogo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; }
+  .catalogo-card { position: relative; border: 1.5px solid var(--border); border-radius: 8px; padding: 10px; cursor: pointer; background: var(--bg-card); transition: border-color .15s; }
+  .catalogo-card:hover { border-color: var(--accent); }
+  .catalogo-card.selected { border-color: var(--accent); background: var(--accent-light); }
+  .catalogo-card .nome { font-weight: 700; font-size: 12.5px; }
+  .catalogo-card .espessura { font-size: 10.5px; color: var(--text-muted); margin-top: 1px; }
+  .catalogo-card .preco { font-size: 13px; font-weight: 800; color: var(--accent-dark); margin-top: 4px; }
+  .catalogo-card .check { position: absolute; top: 6px; right: 6px; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 11px; font-weight: 800; display: none; align-items: center; justify-content: center; }
+  .catalogo-card.selected .check { display: flex; }
 
-  /* --- Item de venda com produto pesquisável --- */
-  .item-venda-row { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 8px; }
-  .item-venda-row input { border: 1px solid var(--border); border-radius: 8px; padding: 7px 9px; font-size: 13px; font-family: inherit; }
-  .item-venda-row .campo-produto { flex: 2; position: relative; }
-  .item-venda-row input.nome-i { width: 100%; box-sizing: border-box; }
-  .item-venda-row .qtd-i { width: 70px; }
-  .item-venda-row .preco-i { width: 100px; }
-  .item-venda-row .unid-i { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
-  .item-venda-row .rm { background: none; border: none; color: var(--danger); cursor: pointer; font-size: 16px; }
+  .aviso-medida-venda { font-size: 11.5px; color: var(--danger); margin-top: 3px; font-weight: 600; display: none; }
+  .aviso-medida-venda.visivel { display: block; }
+  input.erro { border-color: var(--danger) !important; background: #FDF2F2; }
 
+  .acessorio-row-venda { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .acessorio-row-venda:last-child { border-bottom: none; }
+  .qtd-control-venda { display: flex; align-items: center; gap: 8px; }
+  .qtd-btn-venda { width: 26px; height: 26px; border-radius: 6px; border: 1.5px solid var(--border); background: var(--bg-card); font-size: 14px; cursor: pointer; }
+  .qtd-btn-venda:hover { border-color: var(--accent); }
+  .qtd-val-venda { min-width: 16px; text-align: center; font-weight: 600; font-size: 13px; }
 
-  /* --- Relatórios --- */
+  .itens-carrinho-venda .item-card { display: flex; justify-content: space-between; align-items: center; }
+  .itens-carrinho-venda .item-card .rm-carrinho { background: none; border: none; color: var(--danger); cursor: pointer; font-size: 15px; margin-left: 8px; }
+
+  .entrega-opcoes { display: flex; gap: 10px; margin-bottom: 12px; }
+  .entrega-opt { flex: 1; border: 2px solid var(--border); border-radius: 8px; padding: 10px; text-align: center; cursor: pointer; font-size: 13px; font-weight: 600; background: var(--bg-card); }
+  .entrega-opt.selected { border-color: var(--accent); background: var(--accent-light); }
+  .entrega-resultado { background: var(--accent-light); border: 1px solid var(--accent); border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-top: 8px; display: none; }
+  .entrega-resultado.visivel { display: block; }
+  .entrega-resultado.erro-box { background: #FBEAE8; border-color: var(--danger); color: var(--danger); }
+  .entrega-status-calc { font-size: 12.5px; color: var(--text-muted); margin-top: 6px; display: none; }
+  .entrega-status-calc.visivel { display: block; }
+
   .periodo-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px 18px; margin-bottom: 22px; }
   .periodo-box > label { font-weight: 700; font-size: 13.5px; }
   .atalhos-periodo { margin-top: 10px; font-size: 12.5px; color: var(--text-muted); display: flex; gap: 8px; align-items: center; }
@@ -415,7 +216,6 @@
   .card-relatorio h3 { margin: 0 0 4px; font-size: 14.5px; }
   .card-relatorio p { margin: 0 0 12px; font-size: 12.5px; color: var(--text-muted); }
 
-  /* --- Modal --- */
   .modal-fundo { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); align-items: center; justify-content: center; z-index: 50; }
   .modal-fundo.ativo { display: flex; }
   .modal-caixa { background: var(--bg-card); border-radius: var(--radius); padding: 24px; width: 520px; max-width: 92vw; max-height: 88vh; overflow-y: auto; }
@@ -430,19 +230,10 @@
     .pedidos-lista { width: 100%; max-height: 260px; }
     .pipeline { grid-template-columns: repeat(2, 1fr); }
   }
-  /* --- Impressão: só a ficha do pedido, sem menu/sidebar --- */
   @media print {
     body * { visibility: hidden; }
     #detalhePedido, #detalhePedido * { visibility: visible; }
-    #detalhePedido {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      border: none;
-      box-shadow: none;
-      padding: 0;
-    }
+    #detalhePedido { position: absolute; top: 0; left: 0; width: 100%; border: none; box-shadow: none; padding: 0; }
     #detalhePedido .det-acoes { display: none; }
   }
 </style>
@@ -453,7 +244,7 @@
 
   <nav class="sidebar">
     <div class="marca">
-      <div class="nome">DFA Vidraçaria</div>
+      <div class="nome">DFA SmartGlass</div>
       <div class="sub">Painel da loja</div>
     </div>
     <div class="nav-item ativo" data-view="dashboard">📊 Dashboard</div>
@@ -464,7 +255,7 @@
     <div class="nav-item" data-view="estoque">📦 Estoque</div>
     <div class="nav-item" data-view="relatorios">📈 Relatórios</div>
     <div class="nav-item" id="btnLinkCliente">🔗 Link p/ clientes</div>
-    <div class="versao">v2.0 · Sistema completo (Firebase)</div>
+    <div class="versao">v2.1 · Sistema completo (Firebase)</div>
   </nav>
 
   <main class="content">
@@ -473,7 +264,6 @@
       ⚠️ Preencha o <code>firebaseConfig</code> no topo do script antes de usar o painel.
     </div>
 
-    <!-- ===================== DASHBOARD ===================== -->
     <section class="view ativa" id="view-dashboard">
       <h1>Dashboard</h1>
       <p class="subt">Visão geral do dia</p>
@@ -493,7 +283,6 @@
       <div class="lista-simples" id="ultimosPedidos"></div>
     </section>
 
-    <!-- ===================== PEDIDOS ===================== -->
     <section class="view" id="view-pedidos">
       <h1>Pedidos</h1>
       <p class="subt">Fila geral — atualiza em tempo real</p>
@@ -517,7 +306,6 @@
       </div>
     </section>
 
-    <!-- ===================== CLIENTES ===================== -->
     <section class="view" id="view-clientes">
       <div class="topo-view">
         <div><h1>Clientes</h1><p class="subt">Cadastro e histórico de compras</p></div>
@@ -533,31 +321,75 @@
     <!-- ===================== NOVA VENDA ===================== -->
     <section class="view" id="view-venda">
       <h1>Nova Venda (balcão)</h1>
-      <p class="subt">Lançar venda rápida direto no caixa da loja</p>
+      <p class="subt">Mesmo catálogo e cálculo do app do cliente — para vendas feitas na loja</p>
 
       <div class="form-venda">
+
+        <h2 class="venda-secao-tit">1. Escolha o vidro</h2>
+        <div class="catalogo-grid" id="vCatalogoVidros"></div>
+
+        <h2 class="venda-secao-tit">2. Medidas</h2>
         <div class="linha-form">
-          <div class="campo autocomplete-wrap">
-            <label>Cliente *</label>
-            <input type="text" id="vCliNome" autocomplete="off" placeholder="Digite o nome...">
-            <div class="autocomplete-list" id="vCliLista"></div>
+          <div class="campo">
+            <label>Altura (mm) *</label>
+            <input type="number" id="vAltura" placeholder="Ex: 800" min="0" step="50">
+            <div id="vAvisoAltura" class="aviso-medida-venda"></div>
           </div>
-          <div class="campo"><label>Telefone *</label><input type="text" id="vCliFone" placeholder="Preenche automático se já for cliente"></div>
+          <div class="campo">
+            <label>Largura (mm) *</label>
+            <input type="number" id="vLargura" placeholder="Ex: 500" min="0" step="50">
+            <div id="vAvisoLargura" class="aviso-medida-venda"></div>
+          </div>
+          <div class="campo" style="max-width:160px;">
+            <label>&nbsp;</label>
+            <button class="btn btn-secundario" id="btnAddVidroCarrinho" type="button">+ Adicionar peça</button>
+          </div>
         </div>
-        <div id="vCliAviso" class="aviso-cliente" style="display:none;"></div>
+        <p style="font-size:11.5px;color:var(--text-muted);margin-top:0;">Medidas múltiplas de 50mm. Dá pra adicionar mais de uma peça do mesmo vidro com medidas diferentes.</p>
 
-        <h2 class="secao">Itens</h2>
-        <div id="vItens"></div>
-        <button class="btn btn-secundario" id="btnAddItemVenda">+ Adicionar item</button>
+        <h2 class="venda-secao-tit">3. Acessórios (opcional)</h2>
+        <div id="vAcessoriosList"></div>
 
-        <div class="linha-form" style="margin-top:18px;">
+        <h2 class="venda-secao-tit">Itens no carrinho</h2>
+        <div class="itens-carrinho-venda" id="vCarrinho">
+          <div style="color:var(--text-muted);font-size:13px;padding:8px 0;">Nenhum item ainda</div>
+        </div>
+
+        <h2 class="venda-secao-tit">4. Dados do cliente</h2>
+        <div class="linha-form">
+          <div class="campo"><label>Nome do cliente *</label><input type="text" id="vCliNome"></div>
+          <div class="campo"><label>Telefone *</label><input type="text" id="vCliFone" placeholder="(31) 90000-0000"></div>
+        </div>
+
+        <h2 class="venda-secao-tit">5. Entrega</h2>
+        <div class="entrega-opcoes">
+          <div class="entrega-opt selected" id="optRetirada">🏠 Retirada na loja (grátis)</div>
+          <div class="entrega-opt" id="optEntrega">🚚 Entrega no endereço do cliente</div>
+        </div>
+        <div id="blocoEnderecoEntrega" style="display:none;">
+          <div class="campo" style="margin-bottom:10px;">
+            <label>Endereço completo do cliente (rua, número, bairro, cidade) *</label>
+            <input type="text" id="vCliEndereco" class="input-largo" placeholder="Rua Exemplo, 123, Bairro, Belo Horizonte/MG" style="margin:0;">
+          </div>
+          <button class="btn btn-secundario" id="btnCalcularKm" type="button">📍 Calcular distância e frete</button>
+          <div class="entrega-status-calc" id="entregaStatusCalc"></div>
+          <div class="entrega-resultado" id="entregaResultado"></div>
+        </div>
+
+        <h2 class="venda-secao-tit">6. Pagamento e total</h2>
+        <div class="linha-form" style="align-items:flex-end;">
           <div class="campo"><label>Forma de pagamento</label>
             <select id="vPagamento">
               <option value="pix">PIX</option>
               <option value="cartao">Cartão</option>
+              <option value="dinheiro">Dinheiro</option>
               <option value="boleto">Boleto</option>
               <option value="faturado">Faturado (Pro)</option>
             </select>
+          </div>
+          <div class="campo">
+            <div style="font-size:12px;color:var(--text-muted);">Subtotal itens: <b id="vSubtotalItens">R$ 0,00</b></div>
+            <div style="font-size:12px;color:var(--text-muted);">Frete: <b id="vValorFrete">R$ 0,00</b></div>
           </div>
           <div class="campo"><label>Total</label><div class="det-total" id="vTotal">R$ 0,00</div></div>
         </div>
@@ -567,7 +399,6 @@
       </div>
     </section>
 
-    <!-- ===================== PRODUÇÃO ===================== -->
     <section class="view" id="view-producao">
       <h1>Chão de Fábrica</h1>
       <p class="subt">Pedidos por etapa de produção</p>
@@ -575,7 +406,6 @@
       <div class="kanban" id="kanban"></div>
     </section>
 
-    <!-- ===================== ESTOQUE ===================== -->
     <section class="view" id="view-estoque">
       <div class="topo-view">
         <div><h1>Controle de Estoque</h1><p class="subt">Produtos, insumos e alertas de mínimo</p></div>
@@ -591,7 +421,6 @@
       </div>
     </section>
 
-    <!-- ===================== RELATÓRIOS ===================== -->
     <section class="view" id="view-relatorios">
       <h1>Relatórios</h1>
       <p class="subt">Exporte dados do período em CSV (abre no Excel)</p>
@@ -636,7 +465,6 @@
   </main>
 </div>
 
-<!-- ===== MODAL genérico (cliente / produto / entrada / link) ===== -->
 <div class="modal-fundo" id="modalFundo">
   <div class="modal-caixa" id="modalCaixa"></div>
 </div>
@@ -645,9 +473,6 @@
 /* =========================================================
    CONFIG - PREENCHER COM OS DADOS REAIS
    ========================================================= */
-
-// TODO_FIREBASE_CONFIG Luciano: mesmo config do vidracaria-app.html
-// (Console Firebase > Configurações do projeto > Seus apps > SDK).
 const firebaseConfig = {
   apiKey: "AIzaSyDkUcB6nEV8MbHus-O4onbd_0GNtxTYddw",
   authDomain: "dfa-vidros-silvio.firebaseapp.com",
@@ -666,15 +491,16 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
 /* =========================================================
+   ENDEREÇO DA LOJA E REGRAS DE ENTREGA
+   ========================================================= */
+const ENDERECO_LOJA = "Rua Mandalay, 120, Guarani, Belo Horizonte, MG";
+const ENTREGA_RAIO_MAX_KM = 50;
+const ENTREGA_PRECO_KM = 4.00; // por km rodado, aplicado 2x (ida e volta)
+
+/* =========================================================
    CONSTANTES (mesmas regras do dfa_sistema.py)
    ========================================================= */
-
-const STATUS_LABELS = {
-  recebido: "Recebido",
-  em_producao: "Em produção",
-  pronto: "Pronto",
-  entregue: "Entregue"
-};
+const STATUS_LABELS = { recebido: "Recebido", em_producao: "Em produção", pronto: "Pronto", entregue: "Entregue" };
 const STATUS_ORDER = ["recebido", "em_producao", "pronto", "entregue"];
 const STATUS_COR = {
   recebido: "var(--status-recebido)",
@@ -682,62 +508,14 @@ const STATUS_COR = {
   pronto: "var(--status-pronto)",
   entregue: "var(--status-entregue)"
 };
-const PAYMENT_LABELS = { pix: "PIX", cartao: "Cartão", boleto: "Boleto", faturado: "Faturado (Pro)" };
-
-// Mesmo catálogo do vidracaria-app.html (index.html), pra vender balcão com
-// o mesmo preço/produto que o cliente vê online. Se mudar um preço lá,
-// espelha aqui também.
-const CATALOGO_PRODUTOS = [
-  { nome: "Vidro Comum",     preco: 100.00, unidade: "m²" },
-  { nome: "Vidro Temperado", preco: 220.00, unidade: "m²" },
-  { nome: "Vidro Laminado",  preco: 300.00, unidade: "m²" },
-  { nome: "Vidro Canelado",  preco: 120.00, unidade: "m²" },
-  { nome: "Vidro Martelado", preco: 120.00, unidade: "m²" },
-  { nome: "Box Abrir",       preco: 350.00, unidade: "m²" },
-  { nome: "Box Articulado",  preco: 420.00, unidade: "m²" },
-  { nome: "Box Canto",       preco: 380.00, unidade: "m²" },
-  { nome: "Box Correr",      preco: 360.00, unidade: "m²" },
-  { nome: "Box Elegance",    preco: 480.00, unidade: "m²" },
-  { nome: "Box Flex",        preco: 450.00, unidade: "m²" },
-  { nome: "Box Frontal",     preco: 370.00, unidade: "m²" },
-  { nome: "Box Teto",        preco: 500.00, unidade: "m²" },
-  { nome: "Espelho Comum",         preco: 130.00, unidade: "m²" },
-  { nome: "Espelho Decorativo",    preco: 220.00, unidade: "m²" },
-  { nome: "Espelho Lapidado",      preco: 180.00, unidade: "m²" },
-  { nome: "Espelho Sob Medida",    preco: 200.00, unidade: "m²" },
-  { nome: "Guarda-Corpo",    preco: 340.00, unidade: "m²" },
-  { nome: "Puxador Concha",   preco: 28.00, unidade: "un" },
-  { nome: "Puxador H",        preco: 45.00, unidade: "un" },
-  { nome: "Roldana Superior", preco: 22.00, unidade: "un" },
-  { nome: "Roldana Inferior", preco: 22.00, unidade: "un" },
-  { nome: "Dobradiça",        preco: 32.00, unidade: "un" },
-  { nome: "Silicone",         preco: 18.00, unidade: "un" },
-  { nome: "Vedação",          preco: 15.00, unidade: "un" },
-  { nome: "Fechamento de Pia", preco: 60.00, unidade: "un" },
-];
-
-// Produtos avulsos que foram digitados manualmente em vendas anteriores
-// (não estavam no catálogo fixo). Ficam salvos no Firebase pra aparecer
-// na busca das próximas vendas também.
-let catalogoExtra = [];
-db.ref("catalogoExtra").on("value", (snap) => {
-  const val = snap.val() || {};
-  catalogoExtra = Object.values(val);
-});
-
-function catalogoCompleto() {
-  return [...CATALOGO_PRODUTOS, ...catalogoExtra];
-}
-
+const PAYMENT_LABELS = { pix: "PIX", cartao: "Cartão", boleto: "Boleto", faturado: "Faturado (Pro)", dinheiro: "Dinheiro" };
 
 function proximoStatus(atual) {
   const i = STATUS_ORDER.indexOf(atual);
   return i >= 0 && i + 1 < STATUS_ORDER.length ? STATUS_ORDER[i + 1] : null;
 }
 
-function fmtBR(valor) {
-  return "R$ " + (valor || 0).toFixed(2).replace(".", ",");
-}
+function fmtBR(valor) { return "R$ " + (valor || 0).toFixed(2).replace(".", ","); }
 
 function fmtHora(iso) {
   if (!iso) return "-";
@@ -768,7 +546,6 @@ function formatConfigLines(item) {
 /* =========================================================
    NAVEGAÇÃO
    ========================================================= */
-
 document.querySelectorAll(".nav-item[data-view]").forEach(el => {
   el.addEventListener("click", () => {
     document.querySelectorAll(".nav-item[data-view]").forEach(n => n.classList.remove("ativo"));
@@ -781,8 +558,7 @@ document.querySelectorAll(".nav-item[data-view]").forEach(el => {
 /* =========================================================
    ESTADO GLOBAL (sincronizado do Firebase)
    ========================================================= */
-
-let pedidos = {};      // { id: pedidoObj }
+let pedidos = {};
 let pedidoSelecionadoId = null;
 
 db.ref("pedidos").on("value", (snap) => {
@@ -799,20 +575,19 @@ function listaPedidosArray() {
 /* =========================================================
    DASHBOARD
    ========================================================= */
-
 function renderDashboard() {
   const lista = listaPedidosArray();
   const total = lista.length;
   const emProducao = lista.filter(p => p.status === "em_producao").length;
   const prontos = lista.filter(p => p.status === "pronto").length;
   const faturamento = lista.reduce((s, p) => s + (p.totals?.total || 0), 0);
-  const clientes = new Set(lista.map(p => p.phone).filter(Boolean)).size;
+  const clientesN = new Set(lista.map(p => p.phone).filter(Boolean)).size;
 
   document.getElementById("mTotal").textContent = total;
   document.getElementById("mEmProducao").textContent = emProducao;
   document.getElementById("mProntos").textContent = prontos;
   document.getElementById("mFaturamento").textContent = fmtBR(faturamento);
-  document.getElementById("mClientes").textContent = clientes;
+  document.getElementById("mClientes").textContent = clientesN;
 
   const pipeline = document.getElementById("pipeline");
   pipeline.innerHTML = STATUS_ORDER.map(st => {
@@ -839,7 +614,6 @@ function renderDashboard() {
 /* =========================================================
    PEDIDOS - LISTA
    ========================================================= */
-
 document.getElementById("buscaPedido").addEventListener("input", renderListaPedidos);
 document.getElementById("filtroStatus").addEventListener("change", renderListaPedidos);
 
@@ -876,13 +650,12 @@ function renderListaPedidos() {
 /* =========================================================
    PEDIDOS - DETALHE
    ========================================================= */
-
 function renderDetalhePedido(order) {
   const el = document.getElementById("detalhePedido");
   if (!order) { el.innerHTML = `<div class="vazio">Selecione um pedido na lista</div>`; return; }
 
   const enderecoTxt = order.delivery === "entrega"
-    ? `Entrega: ${order.addr || ""}, ${order.num || ""} - ${order.bairro || ""} - ${order.city || ""}`
+    ? `Entrega: ${order.addr || ""}${order.deliveryKm ? " · " + order.deliveryKm.toFixed(1) + " km" : ""}`
     : "Retirada na loja";
 
   const itensHtml = (order.items || []).map(item => `
@@ -910,6 +683,7 @@ function renderDetalhePedido(order) {
 
     <div class="det-secao">Pagamento</div>
     <div>${PAYMENT_LABELS[order.payment] || order.payment || "-"}</div>
+    ${order.totals?.delivery ? `<div style="font-size:12.5px;color:var(--text-muted);margin-top:4px;">Frete: ${fmtBR(order.totals.delivery)}</div>` : ""}
     <div class="det-total">${fmtBR(order.totals?.total)}</div>
 
     <div class="det-acoes">
@@ -918,9 +692,7 @@ function renderDetalhePedido(order) {
     </div>
   `;
 
-  if (prox) {
-    document.getElementById("btnAvancar").addEventListener("click", () => avancarStatus(order.id, prox));
-  }
+  if (prox) document.getElementById("btnAvancar").addEventListener("click", () => avancarStatus(order.id, prox));
   document.getElementById("btnImprimir").addEventListener("click", () => window.print());
 }
 
@@ -991,9 +763,7 @@ db.ref("clientes").on("value", (snap) => {
   if (clienteSelecionadoId) renderDetalheCliente(clientes[clienteSelecionadoId]);
 });
 
-function clientesArray() {
-  return Object.values(clientes).sort((a, b) => (a.name || "").localeCompare(b.name || ""));
-}
+function clientesArray() { return Object.values(clientes).sort((a, b) => (a.name || "").localeCompare(b.name || "")); }
 
 document.getElementById("buscaCliente").addEventListener("input", renderListaClientes);
 
@@ -1109,193 +879,350 @@ function formCliente(c) {
 }
 
 /* =========================================================
-   AUTOCOMPLETE genérico (usado no cliente e no produto)
+   NOVA VENDA (balcão) — catálogo igual ao app do cliente
    ========================================================= */
-function ligarAutocomplete({ input, lista, buscarFn, renderItemFn, onSelectFn }) {
-  function abrir(termo) {
-    const resultados = buscarFn(termo);
-    if (!resultados.length) {
-      lista.innerHTML = `<div class="autocomplete-vazio">Nada encontrado — pode digitar livre e cadastra na hora</div>`;
-    } else {
-      lista.innerHTML = resultados.map((r, i) => renderItemFn(r, i)).join("");
-      lista.querySelectorAll(".autocomplete-item").forEach((el, i) => {
-        el.addEventListener("mousedown", (e) => { // mousedown dispara antes do blur
-          e.preventDefault();
-          onSelectFn(resultados[i]);
-          lista.classList.remove("aberta");
-        });
-      });
-    }
-    lista.classList.add("aberta");
-  }
-  input.addEventListener("input", () => abrir(input.value.trim()));
-  input.addEventListener("focus", () => abrir(input.value.trim()));
-  input.addEventListener("blur", () => setTimeout(() => lista.classList.remove("aberta"), 120));
-}
 
-/* =========================================================
-   NOVA VENDA (balcão)
-   ========================================================= */
-let itensVenda = [];
-let clienteVendaSelecionadoId = null;
+// Mesmo catálogo do vidracaria-app.html (mantenha os dois em sincronia
+// se mudar preço ou adicionar vidro novo).
+const V_VIDROS = [
+  { id: "comum",     nome: "Vidro Comum",     preco_m2: 100.00, espessura_mm: 4,  tarja: "Mais vendido",  min_mm: 50 },
+  { id: "temperado", nome: "Vidro Temperado", preco_m2: 220.00, espessura_mm: 8,  tarja: "Mais seguro",   min_mm: 50 },
+  { id: "laminado",  nome: "Vidro Laminado",  preco_m2: 300.00, espessura_mm: 8,  tarja: "Premium",       min_mm: 50 },
+  { id: "canelado",  nome: "Vidro Canelado",  preco_m2: 120.00, espessura_mm: 4,  tarja: "Decorativo",    min_mm: 50 },
+  { id: "martelado", nome: "Vidro Martelado", preco_m2: 120.00, espessura_mm: 4,  tarja: "Textura",       min_mm: 50 },
+  { id: "aramado",   nome: "Vidro Aramado",   preco_m2: 130.00, espessura_mm: 6,  tarja: "Segurança",     min_mm: 250 }
+];
 
-// --- Busca de cliente (mostra nome + telefone pra diferenciar homônimos) ---
-const vCliNomeInput = document.getElementById("vCliNome");
-const vCliFoneInput = document.getElementById("vCliFone");
-const vCliAviso = document.getElementById("vCliAviso");
+const V_ACESSORIOS = [
+  { id: "puxador-concha",   nome: "Puxador Concha",     preco_unit: 28.00 },
+  { id: "puxador-h",        nome: "Puxador H",          preco_unit: 45.00 },
+  { id: "roldana-superior", nome: "Roldana Superior",   preco_unit: 22.00 },
+  { id: "roldana-inferior", nome: "Roldana Inferior",   preco_unit: 22.00 },
+  { id: "dobradica",        nome: "Dobradiça",          preco_unit: 32.00 },
+  { id: "silicone",         nome: "Silicone",           preco_unit: 18.00 },
+  { id: "vedacao",          nome: "Vedação",            preco_unit: 15.00 },
+  { id: "fechamento-pia",   nome: "Fechamento de Pia",  preco_unit: 60.00 }
+];
 
-ligarAutocomplete({
-  input: vCliNomeInput,
-  lista: document.getElementById("vCliLista"),
-  buscarFn: (termo) => {
-    if (!termo) return clientesArray().slice(0, 8);
-    const t = termo.toLowerCase();
-    return clientesArray().filter(c => (c.name || "").toLowerCase().includes(t) || (c.phone || "").includes(t)).slice(0, 8);
-  },
-  renderItemFn: (c) => `
-    <div class="autocomplete-item">
-      <div class="principal">${c.name}</div>
-      <div class="secundario">${c.phone || "sem telefone"}${c.city ? " · " + c.city : ""}</div>
-    </div>`,
-  onSelectFn: (c) => {
-    vCliNomeInput.value = c.name;
-    vCliFoneInput.value = c.phone || "";
-    clienteVendaSelecionadoId = c.id;
-    mostrarAvisoCliente(true, c.name);
-  }
-});
+const estadoVenda = {
+  vidroSelecionado: null,
+  altura: 0,
+  largura: 0,
+  itens: [],
+  acessoriosQtd: {},
+  delivery: "retirada",
+  deliveryKm: null,
+  deliveryFee: 0,
+};
 
-vCliNomeInput.addEventListener("input", () => {
-  // se o texto não bate mais com o cliente selecionado, desmarca (é um novo nome)
-  if (clienteVendaSelecionadoId && clientes[clienteVendaSelecionadoId]?.name !== vCliNomeInput.value) {
-    clienteVendaSelecionadoId = null;
-  }
-  vCliAviso.style.display = "none";
-});
-
-function mostrarAvisoCliente(existente, nome) {
-  vCliAviso.style.display = "block";
-  if (existente) {
-    vCliAviso.className = "aviso-cliente existente";
-    vCliAviso.textContent = "✓ Cliente já cadastrado: " + nome;
-  } else {
-    vCliAviso.className = "aviso-cliente novo";
-    vCliAviso.textContent = "⚠ Cliente novo — vai ser cadastrado automaticamente ao finalizar a venda.";
-  }
-}
-
-// --- Itens da venda, cada um com busca de produto no catálogo ---
-function renderItensVenda() {
-  const el = document.getElementById("vItens");
-  el.innerHTML = itensVenda.map((it, i) => `
-    <div class="item-venda-row">
-      <div class="campo-produto autocomplete-wrap">
-        <input class="nome-i" placeholder="Digite pra buscar o produto..." value="${it.nome}" data-i="${i}" data-campo="nome" autocomplete="off">
-        <div class="unid-i">${it.unidade === "m²" ? "Quantidade em m²" : "Quantidade em unidades"}</div>
-        <div class="autocomplete-list" data-lista-i="${i}"></div>
-      </div>
-      <input class="qtd-i" type="number" min="0.01" step="0.01" placeholder="Qtd" value="${it.qtd}" data-i="${i}" data-campo="qtd">
-      <input class="preco-i" type="number" step="0.01" placeholder="Preço unit." value="${it.preco}" data-i="${i}" data-campo="preco">
-      <button class="rm" data-i="${i}">✕</button>
+function renderCatalogoVidrosVenda() {
+  const el = document.getElementById("vCatalogoVidros");
+  el.innerHTML = V_VIDROS.map(v => `
+    <div class="catalogo-card ${estadoVenda.vidroSelecionado?.id === v.id ? 'selected' : ''}" data-id="${v.id}">
+      <span class="check">✓</span>
+      <div class="nome">${v.nome}</div>
+      <div class="espessura">Espessura ${v.espessura_mm}mm${v.min_mm > 50 ? ' · mín ' + v.min_mm + 'mm' : ''}</div>
+      <div class="preco">${fmtBR(v.preco_m2)}/m²</div>
     </div>`).join("");
-
-  el.querySelectorAll("input[data-campo]").forEach(inp => inp.addEventListener("input", (e) => {
-    const i = +e.target.dataset.i, campo = e.target.dataset.campo;
-    itensVenda[i][campo] = campo === "nome" ? e.target.value : parseFloat(e.target.value) || 0;
-    atualizarTotalVenda();
-  }));
-  el.querySelectorAll(".rm").forEach(btn => btn.addEventListener("click", (e) => {
-    itensVenda.splice(+e.target.dataset.i, 1);
-    renderItensVenda();
-    atualizarTotalVenda();
-  }));
-
-  // liga autocomplete de produto em cada linha
-  el.querySelectorAll(".item-venda-row").forEach((row, i) => {
-    ligarAutocomplete({
-      input: row.querySelector(".nome-i"),
-      lista: row.querySelector(".autocomplete-list"),
-      buscarFn: (termo) => {
-        const cat = catalogoCompleto();
-        if (!termo) return cat.slice(0, 8);
-        const t = termo.toLowerCase();
-        return cat.filter(p => p.nome.toLowerCase().includes(t)).slice(0, 8);
-      },
-      renderItemFn: (p) => `
-        <div class="autocomplete-item">
-          <div class="principal">${p.nome}</div>
-          <div class="secundario">${fmtBR(p.preco)} / ${p.unidade}</div>
-        </div>`,
-      onSelectFn: (p) => {
-        itensVenda[i].nome = p.nome;
-        itensVenda[i].preco = p.preco;
-        itensVenda[i].unidade = p.unidade;
-        renderItensVenda();
-        atualizarTotalVenda();
-      }
+  el.querySelectorAll(".catalogo-card").forEach(card => {
+    card.addEventListener("click", () => {
+      estadoVenda.vidroSelecionado = V_VIDROS.find(v => v.id === card.dataset.id);
+      renderCatalogoVidrosVenda();
+      validarMedidasVenda();
     });
   });
 }
 
-function atualizarTotalVenda() {
-  const total = itensVenda.reduce((s, it) => s + (it.qtd * it.preco), 0);
-  document.getElementById("vTotal").textContent = fmtBR(total);
-  return total;
+function validarMedidasVenda() {
+  const min = estadoVenda.vidroSelecionado ? estadoVenda.vidroSelecionado.min_mm : 50;
+  const elA = document.getElementById("vAltura"), avA = document.getElementById("vAvisoAltura");
+  const elL = document.getElementById("vLargura"), avL = document.getElementById("vAvisoLargura");
+
+  let erroA = "";
+  if (estadoVenda.altura > 0) {
+    if (estadoVenda.altura < min) erroA = `Mínimo ${min}mm.`;
+    else if (estadoVenda.altura % 50 !== 0) erroA = "Deve ser múltiplo de 50mm.";
+  }
+  elA.classList.toggle("erro", !!erroA);
+  avA.textContent = erroA ? "⚠️ " + erroA : "";
+  avA.classList.toggle("visivel", !!erroA);
+
+  let erroL = "";
+  if (estadoVenda.largura > 0) {
+    if (estadoVenda.largura < min) erroL = `Mínimo ${min}mm.`;
+    else if (estadoVenda.largura % 50 !== 0) erroL = "Deve ser múltiplo de 50mm.";
+  }
+  elL.classList.toggle("erro", !!erroL);
+  avL.textContent = erroL ? "⚠️ " + erroL : "";
+  avL.classList.toggle("visivel", !!erroL);
+
+  return !erroA && !erroL;
 }
 
-document.getElementById("btnAddItemVenda").addEventListener("click", () => {
-  itensVenda.push({ nome: "", qtd: 1, preco: 0, unidade: "un" });
-  renderItensVenda();
+document.getElementById("vAltura").addEventListener("input", (e) => {
+  estadoVenda.altura = parseInt(e.target.value) || 0;
+  validarMedidasVenda();
+});
+document.getElementById("vLargura").addEventListener("input", (e) => {
+  estadoVenda.largura = parseInt(e.target.value) || 0;
+  validarMedidasVenda();
 });
 
-document.getElementById("btnFinalizarVenda").addEventListener("click", () => {
-  const nome = vCliNomeInput.value.trim();
-  const fone = vCliFoneInput.value.trim();
-  const msg = document.getElementById("vMsg");
-  if (!nome || !fone) { msg.style.color = "var(--danger)"; msg.textContent = "Nome e telefone do cliente são obrigatórios."; return; }
-  if (!itensVenda.length || itensVenda.some(it => !it.nome)) { msg.style.color = "var(--danger)"; msg.textContent = "Adicione ao menos um item com nome."; return; }
+document.getElementById("btnAddVidroCarrinho").addEventListener("click", () => {
+  if (!estadoVenda.vidroSelecionado) { alert("Escolha um vidro no catálogo primeiro."); return; }
+  if (!estadoVenda.altura || !estadoVenda.largura) { alert("Informe altura e largura."); return; }
+  if (!validarMedidasVenda()) { alert("Corrija as medidas antes de adicionar."); return; }
 
-  const total = atualizarTotalVenda();
+  const areaM2 = (estadoVenda.altura / 1000) * (estadoVenda.largura / 1000);
+  const subtotal = areaM2 * estadoVenda.vidroSelecionado.preco_m2;
+  estadoVenda.itens.push({
+    tipo: "vidro",
+    productId: estadoVenda.vidroSelecionado.id,
+    productName: estadoVenda.vidroSelecionado.nome,
+    productType: "glass",
+    config: { width: estadoVenda.largura, height: estadoVenda.altura, thickness: estadoVenda.vidroSelecionado.espessura_mm, color: "incolor", finish: "", cuts: 0, holes: 0 },
+    unit: "m2",
+    qty: 1,
+    area_m2: areaM2,
+    subtotal,
+  });
+
+  estadoVenda.altura = 0; estadoVenda.largura = 0;
+  document.getElementById("vAltura").value = "";
+  document.getElementById("vLargura").value = "";
+  validarMedidasVenda();
+  renderCarrinhoVenda();
+  atualizarTotalVenda();
+});
+
+function renderAcessoriosVenda() {
+  const el = document.getElementById("vAcessoriosList");
+  el.innerHTML = V_ACESSORIOS.map(a => {
+    const qtd = estadoVenda.acessoriosQtd[a.id] || 0;
+    return `<div class="acessorio-row-venda">
+      <div><b>${a.nome}</b> <span style="color:var(--text-muted);">— ${fmtBR(a.preco_unit)}/un</span></div>
+      <div class="qtd-control-venda">
+        <button type="button" class="qtd-btn-venda" data-acao="menos" data-id="${a.id}">−</button>
+        <span class="qtd-val-venda">${qtd}</span>
+        <button type="button" class="qtd-btn-venda" data-acao="mais" data-id="${a.id}">+</button>
+      </div>
+    </div>`;
+  }).join("");
+  el.querySelectorAll(".qtd-btn-venda").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.id, acao = btn.dataset.acao;
+      const atual = estadoVenda.acessoriosQtd[id] || 0;
+      estadoVenda.acessoriosQtd[id] = acao === "mais" ? atual + 1 : Math.max(0, atual - 1);
+      renderAcessoriosVenda();
+      sincronizarAcessoriosNoCarrinho();
+    });
+  });
+}
+
+function sincronizarAcessoriosNoCarrinho() {
+  estadoVenda.itens = estadoVenda.itens.filter(it => it.tipo !== "acessorio");
+  V_ACESSORIOS.forEach(a => {
+    const qtd = estadoVenda.acessoriosQtd[a.id] || 0;
+    if (qtd > 0) {
+      estadoVenda.itens.push({
+        tipo: "acessorio",
+        productId: a.id,
+        productName: a.nome,
+        productType: "acessorio",
+        config: {},
+        unit: "un",
+        qty: qtd,
+        subtotal: qtd * a.preco_unit,
+      });
+    }
+  });
+  renderCarrinhoVenda();
+  atualizarTotalVenda();
+}
+
+function renderCarrinhoVenda() {
+  const el = document.getElementById("vCarrinho");
+  if (!estadoVenda.itens.length) {
+    el.innerHTML = `<div style="color:var(--text-muted);font-size:13px;padding:8px 0;">Nenhum item ainda</div>`;
+    return;
+  }
+  el.innerHTML = estadoVenda.itens.map((it, i) => `
+    <div class="item-card">
+      <div>
+        <div class="nome-item">${it.productName} ${it.tipo === 'vidro' ? `— ${it.config.width}x${it.config.height}mm` : `× ${it.qty}`}</div>
+        <div class="subtotal">${fmtBR(it.subtotal)}</div>
+      </div>
+      <button type="button" class="rm-carrinho" data-i="${i}">✕</button>
+    </div>`).join("");
+  el.querySelectorAll(".rm-carrinho").forEach(btn => btn.addEventListener("click", () => {
+    const item = estadoVenda.itens[+btn.dataset.i];
+    if (item.tipo === "acessorio") estadoVenda.acessoriosQtd[item.productId] = 0;
+    estadoVenda.itens.splice(+btn.dataset.i, 1);
+    renderAcessoriosVenda();
+    renderCarrinhoVenda();
+    atualizarTotalVenda();
+  }));
+}
+
+/* --- Entrega: retirada x entrega com cálculo de km --- */
+const optRetirada = document.getElementById("optRetirada");
+const optEntrega = document.getElementById("optEntrega");
+const blocoEnderecoEntrega = document.getElementById("blocoEnderecoEntrega");
+
+optRetirada.addEventListener("click", () => {
+  estadoVenda.delivery = "retirada";
+  estadoVenda.deliveryKm = null;
+  estadoVenda.deliveryFee = 0;
+  optRetirada.classList.add("selected");
+  optEntrega.classList.remove("selected");
+  blocoEnderecoEntrega.style.display = "none";
+  document.getElementById("entregaResultado").classList.remove("visivel");
+  atualizarTotalVenda();
+});
+
+optEntrega.addEventListener("click", () => {
+  estadoVenda.delivery = "entrega";
+  optEntrega.classList.add("selected");
+  optRetirada.classList.remove("selected");
+  blocoEnderecoEntrega.style.display = "block";
+  atualizarTotalVenda();
+});
+
+// Geocodificação gratuita via Nominatim (OpenStreetMap) + distância de
+// rota via OSRM público — sem precisar de chave de API. São serviços
+// públicos com limite de uso; se o volume de entregas crescer bastante,
+// vale migrar pro Google Distance Matrix (mais rápido e mais preciso).
+async function geocodificar(endereco) {
+  const url = "https://nominatim.openstreetmap.org/search?format=json&limit=1&q=" + encodeURIComponent(endereco);
+  const resp = await fetch(url, { headers: { "Accept-Language": "pt-BR" } });
+  if (!resp.ok) throw new Error("Falha ao consultar geocodificação");
+  const dados = await resp.json();
+  if (!dados.length) throw new Error("Endereço não encontrado");
+  return { lat: parseFloat(dados[0].lat), lon: parseFloat(dados[0].lon) };
+}
+
+async function calcularDistanciaRotaKm(origem, destino) {
+  const url = `https://router.project-osrm.org/route/v1/driving/${origem.lon},${origem.lat};${destino.lon},${destino.lat}?overview=false`;
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error("Falha ao calcular rota");
+  const dados = await resp.json();
+  if (!dados.routes || !dados.routes.length) throw new Error("Não foi possível traçar rota entre os endereços");
+  return dados.routes[0].distance / 1000;
+}
+
+document.getElementById("btnCalcularKm").addEventListener("click", async () => {
+  const enderecoCliente = document.getElementById("vCliEndereco").value.trim();
+  const statusEl = document.getElementById("entregaStatusCalc");
+  const resultEl = document.getElementById("entregaResultado");
+  const btn = document.getElementById("btnCalcularKm");
+
+  if (!enderecoCliente) { alert("Informe o endereço do cliente."); return; }
+
+  btn.disabled = true;
+  statusEl.textContent = "Calculando distância até a loja...";
+  statusEl.classList.add("visivel");
+  resultEl.classList.remove("visivel", "erro-box");
+
+  try {
+    const [origemLoja, destinoCliente] = await Promise.all([
+      geocodificar(ENDERECO_LOJA),
+      geocodificar(enderecoCliente)
+    ]);
+    const distanciaKm = await calcularDistanciaRotaKm(origemLoja, destinoCliente);
+
+    if (distanciaKm > ENTREGA_RAIO_MAX_KM) {
+      estadoVenda.deliveryKm = distanciaKm;
+      estadoVenda.deliveryFee = 0;
+      resultEl.classList.add("visivel", "erro-box");
+      resultEl.innerHTML = `⚠️ Distância de ${distanciaKm.toFixed(1)} km — fora do raio de entrega (máx. ${ENTREGA_RAIO_MAX_KM} km). Combine direto com o cliente ou ofereça retirada.`;
+    } else {
+      const frete = distanciaKm * 2 * ENTREGA_PRECO_KM;
+      estadoVenda.deliveryKm = distanciaKm;
+      estadoVenda.deliveryFee = frete;
+      resultEl.classList.add("visivel");
+      resultEl.classList.remove("erro-box");
+      resultEl.innerHTML = `📍 Distância até o cliente: <b>${distanciaKm.toFixed(1)} km</b><br>🚚 Frete (ida e volta): <b>${fmtBR(frete)}</b>`;
+    }
+  } catch (err) {
+    resultEl.classList.add("visivel", "erro-box");
+    resultEl.innerHTML = `❌ Não foi possível calcular: ${err.message}. Confira o endereço ou a conexão.`;
+    estadoVenda.deliveryKm = null;
+    estadoVenda.deliveryFee = 0;
+    console.error(err);
+  } finally {
+    statusEl.classList.remove("visivel");
+    btn.disabled = false;
+    atualizarTotalVenda();
+  }
+});
+
+function atualizarTotalVenda() {
+  const subtotalItens = estadoVenda.itens.reduce((s, it) => s + (it.subtotal || 0), 0);
+  const frete = estadoVenda.delivery === "entrega" ? (estadoVenda.deliveryFee || 0) : 0;
+  const total = subtotalItens + frete;
+
+  document.getElementById("vSubtotalItens").textContent = fmtBR(subtotalItens);
+  document.getElementById("vValorFrete").textContent = fmtBR(frete);
+  document.getElementById("vTotal").textContent = fmtBR(total);
+  return { subtotalItens, frete, total };
+}
+
+document.getElementById("btnFinalizarVenda").addEventListener("click", () => {
+  const nome = document.getElementById("vCliNome").value.trim();
+  const fone = document.getElementById("vCliFone").value.trim();
+  const endereco = document.getElementById("vCliEndereco").value.trim();
+  const msg = document.getElementById("vMsg");
+
+  if (!nome) { msg.style.color = "var(--danger)"; msg.textContent = "Informe o nome do cliente."; return; }
+  if (!fone) { msg.style.color = "var(--danger)"; msg.textContent = "Informe o telefone do cliente — é o que ele vai usar pra acompanhar o pedido no app."; return; }
+  if (!estadoVenda.itens.length) { msg.style.color = "var(--danger)"; msg.textContent = "Adicione ao menos um item (vidro ou acessório)."; return; }
+  if (estadoVenda.delivery === "entrega") {
+    if (!endereco) { msg.style.color = "var(--danger)"; msg.textContent = "Informe o endereço de entrega do cliente."; return; }
+    if (estadoVenda.deliveryKm == null || !estadoVenda.deliveryFee) { msg.style.color = "var(--danger)"; msg.textContent = "Calcule a distância e o frete antes de finalizar."; return; }
+  }
+
+  const { subtotalItens, frete, total } = atualizarTotalVenda();
+  const agora = new Date().toISOString();
   const id = "PED-" + Date.now().toString(36).toUpperCase();
+
   const pedido = {
-    id, date: new Date().toISOString(), name: nome, phone: fone,
-    origem: "balcao", status: "recebido", statusHistory: [{ status: "recebido", at: new Date().toISOString() }],
+    id, date: agora, name: nome, phone: fone,
+    addr: estadoVenda.delivery === "entrega" ? endereco : "",
+    origem: "balcao", status: "recebido", statusHistory: [{ status: "recebido", at: agora }],
     payment: document.getElementById("vPagamento").value,
-    delivery: "retirada",
-    items: itensVenda.map(it => ({ productName: it.nome, productType: "avulso", qty: it.qtd, config: {}, subtotal: it.qtd * it.preco })),
-    totals: { total },
+    delivery: estadoVenda.delivery,
+    deliveryKm: estadoVenda.delivery === "entrega" ? estadoVenda.deliveryKm : null,
+    items: estadoVenda.itens,
+    totals: { subtotal: subtotalItens, delivery: frete, total },
   };
   db.ref("pedidos/" + id).set(pedido);
 
-  // cliente novo (não veio da busca) -> cadastra automático
-  if (!clienteVendaSelecionadoId) {
-    const jaExiste = clientesArray().find(c => c.phone === fone);
-    if (!jaExiste) {
-      const cid = "CLI-" + Date.now().toString(36).toUpperCase();
-      db.ref("clientes/" + cid).set({ id: cid, name: nome, phone: fone, doc: "", email: "", addr: "", num: "", bairro: "", city: "", isPro: false, createdAt: new Date().toISOString() });
-    }
-  }
-
-  // produtos digitados na mão que não estavam no catálogo -> salva pra próxima busca
-  itensVenda.forEach(it => {
-    const jaEsta = catalogoCompleto().some(p => p.nome.toLowerCase() === it.nome.toLowerCase());
-    if (!jaEsta) {
-      const pid = "EXTRA-" + it.nome.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-      db.ref("catalogoExtra/" + pid).set({ nome: it.nome, preco: it.preco, unidade: it.unidade || "un" });
-    }
-  });
-
   msg.style.color = "var(--accent-dark)";
-  msg.textContent = "Venda registrada! Pedido " + id;
-  itensVenda = [];
-  clienteVendaSelecionadoId = null;
-  vCliAviso.style.display = "none";
-  renderItensVenda();
-  vCliNomeInput.value = "";
-  vCliFoneInput.value = "";
+  msg.textContent = "Venda registrada! Pedido " + id + " — o cliente já pode acompanhar no app usando o telefone informado.";
+
+  estadoVenda.vidroSelecionado = null;
+  estadoVenda.altura = 0; estadoVenda.largura = 0;
+  estadoVenda.itens = []; estadoVenda.acessoriosQtd = {};
+  estadoVenda.delivery = "retirada"; estadoVenda.deliveryKm = null; estadoVenda.deliveryFee = 0;
+  document.getElementById("vAltura").value = "";
+  document.getElementById("vLargura").value = "";
+  document.getElementById("vCliNome").value = "";
+  document.getElementById("vCliFone").value = "";
+  document.getElementById("vCliEndereco").value = "";
+  optRetirada.classList.add("selected");
+  optEntrega.classList.remove("selected");
+  blocoEnderecoEntrega.style.display = "none";
+  document.getElementById("entregaResultado").classList.remove("visivel");
+  renderCatalogoVidrosVenda();
+  renderAcessoriosVenda();
+  renderCarrinhoVenda();
   atualizarTotalVenda();
 });
-renderItensVenda();
+
+renderCatalogoVidrosVenda();
+renderAcessoriosVenda();
+renderCarrinhoVenda();
+atualizarTotalVenda();
 
 /* =========================================================
    PRODUÇÃO (kanban)
@@ -1328,15 +1255,13 @@ function renderKanban() {
 }
 
 document.getElementById("btnExportCorte").addEventListener("click", () => {
-  // Só entram peças de vidro/espelho com medidas - itens de caixilho (box) e
-  // acessórios avulsos não vão pra mesa de corte.
   const pendentes = listaPedidosArray().filter(p => p.status === "recebido" || p.status === "em_producao");
   const linhas = [["Pedido", "Cliente", "Peça", "Largura_mm", "Altura_mm", "Espessura_mm", "Cor", "Acabamento", "Qtd", "Furos", "Recortes", "Obs"]];
 
   pendentes.forEach(p => {
     (p.items || []).forEach(item => {
       const c = item.config || {};
-      if (!c.width || !c.height) return; // pula item sem medida (ex: acessório avulso)
+      if (!c.width || !c.height) return;
       linhas.push([
         p.id, p.name || "", item.productName || "",
         c.width, c.height, c.thickness || "", c.color || "", c.finish || "",
@@ -1361,9 +1286,7 @@ db.ref("estoque").on("value", (snap) => {
   if (produtoSelecionadoId) renderDetalheEstoque(estoque[produtoSelecionadoId]);
 });
 
-function estoqueArray() {
-  return Object.values(estoque).sort((a, b) => (a.name || "").localeCompare(b.name || ""));
-}
+function estoqueArray() { return Object.values(estoque).sort((a, b) => (a.name || "").localeCompare(b.name || "")); }
 
 document.getElementById("buscaEstoque").addEventListener("input", renderListaEstoque);
 
@@ -1544,7 +1467,6 @@ document.getElementById("btnExportEstoque").addEventListener("click", () => {
   baixarCSV("estoque.csv", linhas);
 });
 
-// período padrão: últimos 30 dias
 (() => {
   const fim = new Date(), ini = new Date();
   ini.setDate(ini.getDate() - 30);
@@ -1552,9 +1474,6 @@ document.getElementById("btnExportEstoque").addEventListener("click", () => {
   document.getElementById("rDataFim").value = fim.toISOString().slice(0, 10);
 })();
 
-/* =========================================================
-   Re-render views dependentes de pedidos quando trocar de aba
-   ========================================================= */
 document.querySelectorAll(".nav-item[data-view]").forEach(el => {
   el.addEventListener("click", () => {
     const v = el.dataset.view;
