@@ -51,24 +51,34 @@
     gap: 12px;
   }
 
-  header img.logo {
-    height: 44px;
-    width: auto;
-    display: block;
-  }
+  header img.logo { height: 44px; width: auto; display: block; }
+  header h1 { margin: 0; font-size: 19px; font-weight: 700; color: var(--text); }
+  header p { margin: 2px 0 0; font-size: 13px; color: var(--text-muted); }
 
-  header h1 {
-    margin: 0;
-    font-size: 19px;
-    font-weight: 700;
-    color: var(--text);
+  /* --- Abas de topo: Fazer pedido / Meu Pedido --- */
+  .abas-topo {
+    display: flex;
+    gap: 6px;
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border);
+    padding: 0 16px;
+    position: sticky;
+    top: 73px;
+    z-index: 9;
   }
-
-  header p {
-    margin: 2px 0 0;
-    font-size: 13px;
+  .aba-topo-item {
+    padding: 12px 14px;
+    font-size: 13.5px;
+    font-weight: 600;
     color: var(--text-muted);
+    cursor: pointer;
+    border-bottom: 2.5px solid transparent;
+    user-select: none;
   }
+  .aba-topo-item.ativa { color: var(--accent-dark); border-bottom-color: var(--accent); }
+
+  .tela { display: none; }
+  .tela.ativa { display: block; }
 
   .banner-produto {
     display: none;
@@ -739,6 +749,191 @@
     cursor: pointer;
     width: 100%;
   }
+
+  /* ===== Meu Pedido (acompanhamento) ===== */
+  .busca-pedido-box {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 18px;
+    margin-bottom: 16px;
+  }
+  .busca-pedido-box .linha-busca { display: flex; gap: 10px; }
+  .busca-pedido-box input {
+    flex: 1;
+    padding: 12px;
+    font-size: 16px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text);
+  }
+  .busca-pedido-box input:focus { outline: none; border-color: var(--accent); }
+  .btn-buscar-pedido {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 0 18px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .btn-buscar-pedido:hover { background: var(--accent-dark); }
+  .btn-buscar-pedido:disabled { background: #C9C6BE; cursor: not-allowed; }
+
+  .lista-pedidos-cliente { display: flex; flex-direction: column; gap: 10px; }
+  .pedido-resumo-card {
+    background: var(--bg-card);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: border-color .15s;
+  }
+  .pedido-resumo-card:hover { border-color: var(--accent); }
+  .pedido-resumo-card .topo-resumo { display: flex; justify-content: space-between; align-items: center; }
+  .pedido-resumo-card .id-resumo { font-weight: 800; color: var(--accent-dark); font-size: 14px; }
+  .pedido-resumo-card .data-resumo { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
+  .pedido-resumo-card .total-resumo { font-weight: 700; font-size: 14px; margin-top: 6px; }
+
+  .badge-status-app {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 20px;
+    color: #fff;
+  }
+
+  .aviso-info-app {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    font-size: 12.5px;
+    color: var(--text-muted);
+    background: var(--accent-light);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 14px;
+  }
+
+  .msg-erro-busca {
+    background: #FBEAE8;
+    color: var(--danger);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    margin-top: 10px;
+    display: none;
+  }
+  .msg-erro-busca.visivel { display: block; }
+
+  /* --- Timeline de status --- */
+  .timeline-pedido {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+    margin: 10px 0 22px;
+    padding: 0 6px;
+  }
+  .timeline-pedido::before {
+    content: "";
+    position: absolute;
+    top: 17px;
+    left: 24px;
+    right: 24px;
+    height: 3px;
+    background: var(--border);
+    z-index: 0;
+  }
+  .timeline-pedido .barra-progresso {
+    position: absolute;
+    top: 17px;
+    left: 24px;
+    height: 3px;
+    background: var(--accent);
+    z-index: 1;
+    transition: width .3s;
+  }
+  .timeline-etapa {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+  }
+  .timeline-etapa .bolinha {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--bg-card);
+    border: 3px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+  }
+  .timeline-etapa.concluida .bolinha { border-color: var(--accent); background: var(--accent); color: #fff; }
+  .timeline-etapa.atual .bolinha { border-color: var(--accent); background: #fff; color: var(--accent); box-shadow: 0 0 0 4px var(--accent-light); }
+  .timeline-etapa .rotulo-etapa { font-size: 10.5px; color: var(--text-muted); margin-top: 6px; text-align: center; max-width: 70px; }
+  .timeline-etapa.concluida .rotulo-etapa, .timeline-etapa.atual .rotulo-etapa { color: var(--text); font-weight: 700; }
+
+  .pedido-detalhe-app .det-secao-app {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    margin: 18px 0 8px;
+  }
+  .pedido-detalhe-app .item-card-app {
+    background: var(--accent-light);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 6px;
+  }
+  .pedido-detalhe-app .item-card-app .nome-item-app { font-weight: 700; font-size: 13.5px; }
+  .pedido-detalhe-app .item-card-app .linha-conf-app { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .pedido-detalhe-app .item-card-app .subtotal-app { text-align: right; font-size: 12.5px; color: var(--accent-dark); font-weight: 700; margin-top: 4px; }
+  .link-voltar-lista { font-size: 12.5px; color: var(--text-muted); text-decoration: underline; cursor: pointer; background: none; border: none; padding: 0; margin-bottom: 12px; }
+
+  /* ===== Forma de entrega (Passo 4) ===== */
+  .entrega-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .entrega-card {
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 12px;
+    text-align: center;
+    cursor: pointer;
+    background: var(--bg-card);
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .entrega-card:hover { border-color: var(--accent); }
+  .entrega-card.selected { border-color: var(--accent); background: var(--accent-light); }
+  .entrega-card .icone { font-size: 20px; margin-bottom: 4px; }
+  .entrega-card .nome { font-weight: 700; font-size: 13.5px; }
+  .entrega-card .desc { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+  .frete-status {
+    font-size: 12.5px;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-top: 4px;
+    display: none;
+  }
+  .frete-status.visivel { display: block; }
+  .frete-status.calculando { background: #F2F1EC; color: var(--text-muted); }
+  .frete-status.ok { background: var(--accent-light); color: var(--accent-dark); font-weight: 600; }
+  .frete-status.erro { background: #FBEAE8; color: var(--danger); font-weight: 600; }
 </style>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -752,6 +947,14 @@
     <p>Escolha o vidro, informe a medida e receba o preço na hora</p>
   </div>
 </header>
+
+<div class="abas-topo">
+  <div class="aba-topo-item ativa" data-tela="fazerPedido">🛒 Fazer pedido</div>
+  <div class="aba-topo-item" data-tela="meuPedido">📦 Meu Pedido</div>
+</div>
+
+<!-- ===================== TELA: FAZER PEDIDO ===================== -->
+<div class="tela ativa" id="tela-fazerPedido">
 
 <div class="carrossel-wrap">
   <div class="carrossel-titulo">Nossos produtos</div>
@@ -846,9 +1049,27 @@
         <input type="tel" id="inputTelefone" class="campo-texto" placeholder="(31) 90000-0000" inputmode="tel">
       </div>
     </div>
-    <div class="campo">
-      <label for="inputEndereco">Endereço para entrega ou retirada (opcional)</label>
-      <input type="text" id="inputEndereco" class="campo-texto" placeholder="Rua, número, bairro, cidade">
+
+    <label style="display:block;font-size:13px;font-weight:600;margin-bottom:8px;color:var(--text-muted);">Como você quer receber? *</label>
+    <div class="entrega-grid">
+      <div class="entrega-card" id="cardRetirada" data-modo="retirada">
+        <div class="icone">🏠</div>
+        <div class="nome">Retirar na loja</div>
+        <div class="desc">Sem custo</div>
+      </div>
+      <div class="entrega-card" id="cardEntrega" data-modo="entrega">
+        <div class="icone">🚚</div>
+        <div class="nome">Receber em casa</div>
+        <div class="desc">Frete por km rodado</div>
+      </div>
+    </div>
+
+    <div id="blocoEnderecoEntrega" style="display:none;">
+      <div class="campo">
+        <label for="inputEndereco">Endereço completo para entrega *</label>
+        <input type="text" id="inputEndereco" class="campo-texto" placeholder="Rua, número, bairro, cidade">
+      </div>
+      <div class="frete-status" id="freteStatus"></div>
     </div>
   </div>
 
@@ -886,6 +1107,41 @@
     </div>
     <button class="btn-finalizar" id="btnFinalizar" disabled>Finalizar pedido</button>
   </div>
+</div>
+
+</div>
+<!-- fim tela fazerPedido -->
+
+<!-- ===================== TELA: MEU PEDIDO ===================== -->
+<div class="tela" id="tela-meuPedido">
+  <main style="padding-top:20px;">
+
+    <!-- Busca -->
+    <div id="mpBusca">
+      <div class="aviso-info-app">
+        <span>ℹ️</span>
+        <span>Digite o telefone usado no pedido (na loja ou no site) pra ver o andamento em tempo real.</span>
+      </div>
+      <div class="busca-pedido-box">
+        <label for="mpTelefone" style="display:block;font-size:13px;font-weight:600;margin-bottom:8px;color:var(--text-muted);">Telefone / WhatsApp</label>
+        <div class="linha-busca">
+          <input type="tel" id="mpTelefone" placeholder="(31) 90000-0000" inputmode="tel">
+          <button class="btn-buscar-pedido" id="btnBuscarPedido">Buscar</button>
+        </div>
+        <div class="msg-erro-busca" id="mpErro"></div>
+      </div>
+    </div>
+
+    <!-- Lista de pedidos encontrados (quando há mais de um) -->
+    <div id="mpLista" style="display:none;">
+      <button class="link-voltar-lista" id="mpVoltarBusca">← Buscar outro telefone</button>
+      <div class="lista-pedidos-cliente" id="mpListaItens"></div>
+    </div>
+
+    <!-- Detalhe de um pedido com timeline -->
+    <div id="mpDetalhe" class="pedido-detalhe-app" style="display:none;"></div>
+
+  </main>
 </div>
 
 <!-- Modal de Pagamento Pix -->
@@ -967,6 +1223,28 @@ const ACESSORIOS = [
 ];
 
 /* =========================================================
+   ABAS DE TOPO
+   ========================================================= */
+document.querySelectorAll(".aba-topo-item").forEach(el => {
+  el.addEventListener("click", () => {
+    document.querySelectorAll(".aba-topo-item").forEach(n => n.classList.remove("ativa"));
+    el.classList.add("ativa");
+    document.querySelectorAll(".tela").forEach(t => t.classList.remove("ativa"));
+    document.getElementById("tela-" + el.dataset.tela).classList.add("ativa");
+    document.querySelector(".barra-fixa").style.display = el.dataset.tela === "fazerPedido" ? "block" : "none";
+    if (el.dataset.tela === "meuPedido") abrirAbaMeuPedido();
+  });
+});
+
+function irParaAbaMeuPedido() {
+  document.querySelectorAll(".aba-topo-item").forEach(n => n.classList.remove("ativa"));
+  document.querySelector('.aba-topo-item[data-tela="meuPedido"]').classList.add("ativa");
+  document.querySelectorAll(".tela").forEach(t => t.classList.remove("ativa"));
+  document.getElementById("tela-meuPedido").classList.add("ativa");
+  document.querySelector(".barra-fixa").style.display = "none";
+}
+
+/* =========================================================
    ESTADO
    ========================================================= */
 const estado = {
@@ -977,7 +1255,12 @@ const estado = {
   erroLargura: "",
   acessorios: {},
   cliente: { nome: "", telefone: "", endereco: "" },
-  formaPagamento: null
+  formaPagamento: null,
+  formaEntrega: null,      // "retirada" | "entrega"
+  entregaKm: 0,
+  entregaValor: 0,
+  entregaErro: "",
+  entregaCalculando: false
 };
 
 const FORMAS_PAGAMENTO = [
@@ -1193,7 +1476,6 @@ function renderPagamento() {
 function validarMedidas() {
   const min = estado.vidroSelecionado ? estado.vidroSelecionado.min_mm : 50;
   
-  // Valida Altura
   const elAltura = document.getElementById("inputAltura");
   const avisoAltura = document.getElementById("avisoAltura");
   if (estado.altura > 0) {
@@ -1217,7 +1499,6 @@ function validarMedidas() {
     avisoAltura.classList.remove("visivel");
   }
 
-  // Valida Largura
   const elLargura = document.getElementById("inputLargura");
   const avisoLargura = document.getElementById("avisoLargura");
   if (estado.largura > 0) {
@@ -1284,7 +1565,6 @@ function calcularPreco() {
   let total = 0;
   const linhas = [];
 
-  // Calcula o vidro sempre que tiver medida > 0, independente de erro
   if (estado.vidroSelecionado && estado.altura > 0 && estado.largura > 0) {
     const areaM2 = (estado.altura / 1000) * (estado.largura / 1000);
     const precoVidro = areaM2 * estado.vidroSelecionado.preco_m2;
@@ -1300,6 +1580,11 @@ function calcularPreco() {
       linhas.push(`${a.nome} × ${qtd}: R$ ${sub.toFixed(2)}`);
     }
   });
+
+  if (estado.formaEntrega === "entrega" && estado.entregaValor > 0) {
+    total += estado.entregaValor;
+    linhas.push(`Entrega — ${estado.entregaKm.toFixed(1)} km (ida e volta): R$ ${estado.entregaValor.toFixed(2)}`);
+  }
 
   return { total, linhas };
 }
@@ -1325,10 +1610,14 @@ function atualizarTudo() {
   precoTotalGrande.textContent = totalFmt;
   precoTotalBarra.textContent = totalFmt;
 
+  const entregaOk = estado.formaEntrega === "retirada"
+    || (estado.formaEntrega === "entrega" && !estado.entregaErro && !estado.entregaCalculando && estado.entregaValor > 0);
+
   const pedidoValido = estado.vidroSelecionado && estado.altura > 0 && estado.largura > 0
     && !estado.erroAltura && !estado.erroLargura
     && estado.cliente.nome.trim() && estado.cliente.telefone.trim()
-    && estado.formaPagamento;
+    && estado.formaPagamento
+    && estado.formaEntrega && entregaOk;
     
   btnFinalizar.disabled = !pedidoValido;
 }
@@ -1356,9 +1645,166 @@ document.getElementById("inputTelefone").addEventListener("input", (e) => {
   atualizarTudo();
 });
 
-document.getElementById("inputEndereco").addEventListener("input", (e) => {
+/* =========================================================
+   FORMA DE ENTREGA (Retirada x Entrega) + CÁLCULO DE FRETE POR KM
+   =========================================================
+   Regra combinada com o Silvio:
+   - Endereço da loja: Rua Mandalay, 120, Guarani, Belo Horizonte/MG
+   - Raio de entrega: até 50km (em linha reta, estimado)
+   - Frete = distância (km) x 2 (ida e volta) x R$ 4,00
+   - Retirada na loja: sem custo
+
+   OBS TÉCNICA (deixar registrado pro Luciano): o cálculo abaixo usa
+   geocodificação gratuita (Nominatim/OpenStreetMap) para achar as
+   coordenadas do endereço digitado, e distância em linha reta
+   (fórmula de Haversine) com um fator de correção de +30% pra
+   aproximar de distância real de rua. NÃO é uma rota real feita
+   por trânsito - pra isso, o certo lá na frente é usar a Distance
+   Matrix API do Google Maps (paga, com cota grátis mensal) ou a
+   OpenRouteService (gratuita com cadastro). Deixei function isolada
+   (calcularDistanciaRealKm) pra trocar por uma API de rota depois
+   sem mexer no resto do código.
+   ========================================================= */
+
+const LOJA_ENDERECO = "Rua Mandalay, 120, Guarani, Belo Horizonte, MG";
+const FRETE_RAIO_MAX_KM = 50;
+const FRETE_PRECO_KM = 4.00;
+const FRETE_FATOR_ROTA = 1.3; // corrige a linha reta pra aproximar de distância real de rua
+
+let lojaCoords = null;        // cache das coordenadas da loja (geocodificada 1x)
+let freteRequestId = 0;       // evita que uma resposta antiga sobrescreva um cálculo mais novo
+
+const cardRetirada = document.getElementById("cardRetirada");
+const cardEntrega = document.getElementById("cardEntrega");
+const blocoEnderecoEntrega = document.getElementById("blocoEnderecoEntrega");
+const inputEndereco = document.getElementById("inputEndereco");
+const freteStatusEl = document.getElementById("freteStatus");
+
+function selecionarFormaEntrega(modo) {
+  estado.formaEntrega = modo;
+  cardRetirada.classList.toggle("selected", modo === "retirada");
+  cardEntrega.classList.toggle("selected", modo === "entrega");
+
+  if (modo === "retirada") {
+    blocoEnderecoEntrega.style.display = "none";
+    estado.entregaKm = 0;
+    estado.entregaValor = 0;
+    estado.entregaErro = "";
+    estado.entregaCalculando = false;
+    estado.cliente.endereco = "";
+  } else {
+    blocoEnderecoEntrega.style.display = "block";
+    if (inputEndereco.value.trim().length > 8) {
+      agendarCalculoFrete();
+    }
+  }
+  atualizarTudo();
+}
+
+cardRetirada.addEventListener("click", () => selecionarFormaEntrega("retirada"));
+cardEntrega.addEventListener("click", () => selecionarFormaEntrega("entrega"));
+
+let freteDebounceTimer = null;
+inputEndereco.addEventListener("input", (e) => {
   estado.cliente.endereco = e.target.value;
+  estado.entregaValor = 0;
+  estado.entregaKm = 0;
+  estado.entregaErro = "";
+  clearTimeout(freteDebounceTimer);
+  if (e.target.value.trim().length > 8) {
+    freteDebounceTimer = setTimeout(agendarCalculoFrete, 900);
+  } else {
+    freteStatusEl.classList.remove("visivel");
+    atualizarTudo();
+  }
 });
+
+function mostrarStatusFrete(texto, tipo) {
+  freteStatusEl.textContent = texto;
+  freteStatusEl.className = "frete-status visivel " + tipo;
+}
+
+// Fórmula de Haversine: distância em linha reta entre duas coordenadas
+function distanciaRetaKm(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const toRad = g => (g * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+async function geocodificar(endereco) {
+  const url = "https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q=" + encodeURIComponent(endereco);
+  const resp = await fetch(url, { headers: { "Accept-Language": "pt-BR" } });
+  if (!resp.ok) throw new Error("Falha na consulta de endereço");
+  const dados = await resp.json();
+  if (!dados.length) return null;
+  return { lat: parseFloat(dados[0].lat), lng: parseFloat(dados[0].lon) };
+}
+
+// Ponto único de troca futura: se um dia plugar Google/OpenRouteService,
+// é só reescrever o corpo desta function mantendo o mesmo retorno
+// { km, real: true/false }.
+async function calcularDistanciaRealKm(enderecoCliente) {
+  if (!lojaCoords) {
+    lojaCoords = await geocodificar(LOJA_ENDERECO);
+    if (!lojaCoords) throw new Error("Não localizei o endereço da loja.");
+  }
+  const destino = await geocodificar(enderecoCliente);
+  if (!destino) throw new Error("Não localizei esse endereço. Confira e tente incluir bairro e cidade.");
+
+  const retaKm = distanciaRetaKm(lojaCoords.lat, lojaCoords.lng, destino.lat, destino.lng);
+  const estimadaKm = retaKm * FRETE_FATOR_ROTA;
+  return { km: estimadaKm, real: false };
+}
+
+function agendarCalculoFrete() {
+  calcularFrete();
+}
+
+async function calcularFrete() {
+  const endereco = inputEndereco.value.trim();
+  if (endereco.length < 8) return;
+
+  const meuRequestId = ++freteRequestId;
+  estado.entregaCalculando = true;
+  estado.entregaErro = "";
+  mostrarStatusFrete("📍 Calculando a distância até você...", "calculando");
+  atualizarTudo();
+
+  try {
+    const { km } = await calcularDistanciaRealKm(endereco);
+    if (meuRequestId !== freteRequestId) return; // resposta antiga, ignora
+
+    if (km > FRETE_RAIO_MAX_KM) {
+      estado.entregaErro = `Esse endereço está a ~${km.toFixed(1)} km da loja, fora da nossa área de entrega (até ${FRETE_RAIO_MAX_KM} km). Fale com a gente pra ver alternativas.`;
+      estado.entregaKm = km;
+      estado.entregaValor = 0;
+      mostrarStatusFrete("⚠️ " + estado.entregaErro, "erro");
+    } else {
+      const valor = km * 2 * FRETE_PRECO_KM;
+      estado.entregaKm = km;
+      estado.entregaValor = valor;
+      estado.entregaErro = "";
+      mostrarStatusFrete(`🚚 Distância estimada: ${km.toFixed(1)} km · Frete (ida e volta): R$ ${valor.toFixed(2)}`, "ok");
+    }
+  } catch (err) {
+    if (meuRequestId !== freteRequestId) return;
+    estado.entregaErro = err.message || "Não foi possível calcular o frete agora.";
+    estado.entregaKm = 0;
+    estado.entregaValor = 0;
+    mostrarStatusFrete("⚠️ " + estado.entregaErro, "erro");
+    console.error(err);
+  } finally {
+    if (meuRequestId === freteRequestId) {
+      estado.entregaCalculando = false;
+      atualizarTudo();
+    }
+  }
+}
 
 /* =========================================================
    GERADOR DE PAYLOAD PIX (EMV QRCPS) + CRC16
@@ -1422,8 +1868,8 @@ function montarItemVidro(total) {
     productCat: "vidros",
     productType: "glass",
     config: {
-      width: estado.largura, // Já está em mm
-      height: estado.altura, // Já está em mm
+      width: estado.largura,
+      height: estado.altura,
       thickness: estado.vidroSelecionado.espessura_mm,
       color: "incolor",
       finish: "",
@@ -1465,6 +1911,7 @@ async function finalizarPedido() {
   const { total } = calcularPreco();
   const agora = new Date().toISOString();
   const pedidoId = "PED-" + Date.now().toString(36).toUpperCase();
+  const subtotalSemFrete = total - (estado.formaEntrega === "entrega" ? estado.entregaValor : 0);
 
   const pedido = {
     id: pedidoId,
@@ -1475,10 +1922,16 @@ async function finalizarPedido() {
     doc: "", email: "", cep: "", num: "", bairro: "", city: "",
     complemento: "", reference: "", pref_date: "",
     obs: "",
-    delivery: estado.cliente.endereco.trim() ? "entrega" : "retirada",
+    delivery: estado.formaEntrega === "entrega" ? "entrega" : "retirada",
+    deliveryKm: estado.formaEntrega === "entrega" ? estado.entregaKm : 0,
     payment: estado.formaPagamento,
-    items: [montarItemVidro(total), ...montarItensAcessorios()],
-    totals: { subtotal: total, volumeDiscount: 0, delivery: 0, total: total },
+    items: [montarItemVidro(subtotalSemFrete), ...montarItensAcessorios()],
+    totals: {
+      subtotal: subtotalSemFrete,
+      volumeDiscount: 0,
+      delivery: estado.formaEntrega === "entrega" ? estado.entregaValor : 0,
+      total: total
+    },
     status: "recebido",
     statusHistory: [{ status: "recebido", at: agora }],
     isPro: false,
@@ -1488,16 +1941,20 @@ async function finalizarPedido() {
   try {
     await db.ref("pedidos/" + pedido.id).set(pedido);
 
+    // Guarda telefone e nº do pedido pra já abrir "Meu Pedido" preenchido
+    // da próxima vez que o cliente entrar no app neste aparelho.
+    try {
+      localStorage.setItem("dfa_ultimo_telefone", pedido.phone);
+      localStorage.setItem("dfa_ultimo_pedido", pedido.id);
+    } catch (e) { /* localStorage pode falhar em modo anônimo — sem problema, segue sem lembrar */ }
+
     if (estado.formaPagamento === "pix") {
-      // GERA PAYLOAD PIX
       const txid = "DFA" + Date.now().toString().slice(-6);
       const payloadPix = gerarPayloadPix(DADOS_PIX.chave, DADOS_PIX.nome, DADOS_PIX.cidade, total, txid);
       
-      // Exibe Modal
       document.getElementById("modalPixValor").textContent = "R$ " + total.toFixed(2).replace(".", ",");
       document.getElementById("pixCopiaCola").value = payloadPix;
       
-      // Gera QR Code
       document.getElementById("qrcode").innerHTML = "";
       new QRCode(document.getElementById("qrcode"), {
         text: payloadPix,
@@ -1513,14 +1970,12 @@ async function finalizarPedido() {
       btnFinalizar.disabled = false;
 
     } else if (estado.formaPagamento === "cartao") {
-      // SIMULAÇÃO DE LINK DE PAGAMENTO
       msgStatus.className = "msg-status ok";
       msgStatus.innerHTML = `✅ <strong>Link de pagamento gerado com sucesso!</strong><br>
       (Simulação) Valor: R$ ${total.toFixed(2).replace(".", ",")}<br>
       <small>Em um ambiente real, o cliente seria redirecionado para o gateway (Mercado Pago, etc).</small>`;
       btnFinalizar.textContent = "Pedido Enviado ✓";
       
-      // Opcional: redirecionar para WhatsApp após 2 segundos
       setTimeout(() => {
         const msgZap = `Olá! Acabei de fazer o pedido *${pedidoId}* no site. Valor: R$ ${total.toFixed(2).replace(".", ",")}. Aguardo o link de pagamento.`;
         window.open(`https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(msgZap)}`, '_blank');
@@ -1543,7 +1998,6 @@ async function finalizarPedido() {
 
 btnFinalizar.addEventListener("click", finalizarPedido);
 
-// Eventos do Modal Pix
 document.getElementById("btnCopiarPix").addEventListener("click", () => {
   const copyText = document.getElementById("pixCopiaCola");
   copyText.select();
@@ -1556,9 +2010,241 @@ document.getElementById("btnCopiarPix").addEventListener("click", () => {
 
 document.getElementById("btnFecharModal").addEventListener("click", () => {
   document.getElementById("modalPix").classList.remove("ativo");
-  const msgZap = `Olá! Acabei de fazer um pedido e gerei o Pix. Podem confirmar o recebimento?`;
-  window.open(`https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(msgZap)}`, '_blank');
+  // já leva o cliente pra tela de acompanhamento, com o pedido dele carregado
+  irParaAbaMeuPedido();
+  abrirAbaMeuPedido();
 });
+
+/* =========================================================
+   MEU PEDIDO — acompanhamento por telefone
+   ========================================================= */
+const MP_STATUS_LABELS = { recebido: "Recebido", em_producao: "Em produção", pronto: "Pronto p/ retirada/entrega", entregue: "Entregue" };
+const MP_STATUS_ORDER = ["recebido", "em_producao", "pronto", "entregue"];
+const MP_STATUS_ICONE = { recebido: "📝", em_producao: "🔧", pronto: "📦", entregue: "✅" };
+const MP_STATUS_COR = { recebido: "#1F4E8C", em_producao: "#C9691A", pronto: "#1B6B3C", entregue: "#6B6B63" };
+const MP_PAYMENT_LABELS = { pix: "PIX", cartao: "Cartão", boleto: "Boleto", faturado: "Faturado (Pro)", dinheiro: "Dinheiro" };
+
+let mpPedidoAtualRef = null; // referência Firebase do pedido aberto (pra live update)
+let mpUltimaListaTelefone = "";
+
+function normalizarTelefone(t) {
+  return (t || "").replace(/\D/g, "");
+}
+
+function mpFmtBR(v) { return "R$ " + (v || 0).toFixed(2).replace(".", ","); }
+function mpFmtData(iso) {
+  if (!iso) return "-";
+  const d = new Date(iso);
+  return d.toLocaleDateString("pt-BR") + " às " + d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+}
+
+// Abre a aba já tentando carregar automaticamente o último pedido feito
+// neste aparelho (guardado no localStorage ao finalizar a compra).
+function abrirAbaMeuPedido() {
+  let telSalvo = "";
+  try { telSalvo = localStorage.getItem("dfa_ultimo_telefone") || ""; } catch (e) {}
+  if (telSalvo && document.getElementById("mpTelefone").value.trim() === "") {
+    document.getElementById("mpTelefone").value = telSalvo;
+    buscarPedidosPorTelefone(telSalvo);
+  }
+}
+
+document.getElementById("btnBuscarPedido").addEventListener("click", () => {
+  const tel = document.getElementById("mpTelefone").value.trim();
+  if (!tel) { mostrarErroBusca("Digite o telefone usado no pedido."); return; }
+  buscarPedidosPorTelefone(tel);
+});
+document.getElementById("mpTelefone").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") document.getElementById("btnBuscarPedido").click();
+});
+
+function mostrarErroBusca(msg) {
+  const el = document.getElementById("mpErro");
+  el.textContent = msg;
+  el.classList.add("visivel");
+}
+function esconderErroBusca() {
+  document.getElementById("mpErro").classList.remove("visivel");
+}
+
+async function buscarPedidosPorTelefone(telefoneDigitado) {
+  esconderErroBusca();
+  const btn = document.getElementById("btnBuscarPedido");
+  btn.disabled = true;
+  btn.textContent = "Buscando...";
+
+  const telNormalizado = normalizarTelefone(telefoneDigitado);
+  mpUltimaListaTelefone = telefoneDigitado;
+
+  try {
+    // Busca todos os pedidos e filtra pelo telefone (comparação só por
+    // dígitos, pra não depender do cliente digitar igualzinho ao cadastro).
+    // Observação: como o app não usa login, o telefone funciona como a
+    // "senha" de acesso ao pedido — combina com Silvio se isso é aceitável
+    // ou se ele prefere depois migrar pra algo com autenticação.
+    const snap = await db.ref("pedidos").once("value");
+    const todos = snap.val() || {};
+    const encontrados = Object.values(todos)
+      .filter(p => normalizarTelefone(p.phone) === telNormalizado && telNormalizado.length >= 8)
+      .sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+
+    btn.disabled = false;
+    btn.textContent = "Buscar";
+
+    if (!encontrados.length) {
+      mostrarErroBusca("Nenhum pedido encontrado com esse telefone. Confira o número ou fale com a gente no WhatsApp.");
+      return;
+    }
+
+    if (encontrados.length === 1) {
+      abrirDetalhePedido(encontrados[0].id);
+    } else {
+      mostrarListaPedidos(encontrados);
+    }
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = "Buscar";
+    mostrarErroBusca("Não foi possível buscar agora. Confira sua conexão e tente de novo.");
+    console.error(err);
+  }
+}
+
+function mostrarListaPedidos(pedidosCliente) {
+  document.getElementById("mpBusca").style.display = "none";
+  document.getElementById("mpDetalhe").style.display = "none";
+  const listaEl = document.getElementById("mpLista");
+  listaEl.style.display = "block";
+
+  document.getElementById("mpListaItens").innerHTML = pedidosCliente.map(p => `
+    <div class="pedido-resumo-card" data-id="${p.id}">
+      <div class="topo-resumo">
+        <span class="id-resumo">${p.id}</span>
+        <span class="badge-status-app" style="background:${MP_STATUS_COR[p.status] || '#999'}">${MP_STATUS_LABELS[p.status] || p.status}</span>
+      </div>
+      <div class="data-resumo">${mpFmtData(p.date)}</div>
+      <div class="total-resumo">${mpFmtBR(p.totals?.total)}</div>
+    </div>`).join("");
+
+  document.querySelectorAll(".pedido-resumo-card").forEach(card => {
+    card.addEventListener("click", () => abrirDetalhePedido(card.dataset.id, true));
+  });
+}
+
+document.getElementById("mpVoltarBusca").addEventListener("click", () => {
+  pararEscutaPedidoAtual();
+  document.getElementById("mpBusca").style.display = "block";
+  document.getElementById("mpLista").style.display = "none";
+  document.getElementById("mpDetalhe").style.display = "none";
+  esconderErroBusca();
+});
+
+function pararEscutaPedidoAtual() {
+  if (mpPedidoAtualRef) {
+    mpPedidoAtualRef.off();
+    mpPedidoAtualRef = null;
+  }
+}
+
+// veioDaLista: se true, o botão "voltar" leva pra lista em vez da busca
+function abrirDetalhePedido(pedidoId, veioDaLista) {
+  document.getElementById("mpBusca").style.display = "none";
+  document.getElementById("mpLista").style.display = "none";
+  const detEl = document.getElementById("mpDetalhe");
+  detEl.style.display = "block";
+  detEl.innerHTML = `<div style="text-align:center;padding:40px 0;color:var(--text-muted);">Carregando pedido...</div>`;
+
+  pararEscutaPedidoAtual();
+  mpPedidoAtualRef = db.ref("pedidos/" + pedidoId);
+  mpPedidoAtualRef.on("value", (snap) => {
+    const pedido = snap.val();
+    if (!pedido) {
+      detEl.innerHTML = `<div style="text-align:center;padding:40px 0;color:var(--text-muted);">Pedido não encontrado.</div>`;
+      return;
+    }
+    renderDetalhePedidoApp(pedido, veioDaLista);
+  });
+}
+
+function renderDetalhePedidoApp(order, veioDaLista) {
+  const detEl = document.getElementById("mpDetalhe");
+  const statusIdx = MP_STATUS_ORDER.indexOf(order.status);
+
+  const timelineHtml = MP_STATUS_ORDER.map((st, i) => {
+    let classe = "";
+    if (i < statusIdx) classe = "concluida";
+    else if (i === statusIdx) classe = "atual";
+    return `<div class="timeline-etapa ${classe}">
+      <div class="bolinha">${i <= statusIdx ? MP_STATUS_ICONE[st] : ""}</div>
+      <div class="rotulo-etapa">${MP_STATUS_LABELS[st]}</div>
+    </div>`;
+  }).join("");
+
+  const progressoPct = statusIdx <= 0 ? 0 : (statusIdx / (MP_STATUS_ORDER.length - 1)) * 100;
+
+  const enderecoTxt = order.delivery === "entrega"
+    ? `🚚 Entrega: ${order.addr || ""}${order.deliveryKm ? " · " + order.deliveryKm.toFixed(1) + " km" : ""}`
+    : "🏠 Retirada na loja";
+
+  const itensHtml = (order.items || []).map(item => {
+    const c = item.config || {};
+    const confLinhas = [];
+    if (c.width && c.height) confLinhas.push(`Medidas: ${c.width} x ${c.height} mm`);
+    if (c.thickness) confLinhas.push(`Espessura: ${c.thickness} mm`);
+    return `<div class="item-card-app">
+      <div class="nome-item-app">${item.productName || "-"} · qtd ${item.qty || 1}</div>
+      ${confLinhas.map(l => `<div class="linha-conf-app">${l}</div>`).join("")}
+      <div class="subtotal-app">${mpFmtBR(item.subtotal)}</div>
+    </div>`;
+  }).join("");
+
+  detEl.innerHTML = `
+    <button class="link-voltar-lista" id="mpBtnVoltarDetalhe">${veioDaLista ? "← Voltar pra lista de pedidos" : "← Buscar outro telefone"}</button>
+
+    <div class="busca-pedido-box">
+      <div class="det-topo" style="display:flex;justify-content:space-between;align-items:center;">
+        <h2 style="margin:0;font-size:18px;">Pedido ${order.id}</h2>
+        <span class="badge-status-app" style="background:${MP_STATUS_COR[order.status] || '#999'}">${MP_STATUS_LABELS[order.status] || order.status}</span>
+      </div>
+      <div style="font-size:12px;color:var(--text-muted);margin:4px 0 4px;">Feito em ${mpFmtData(order.date)}</div>
+
+      <div class="timeline-pedido">
+        <div class="barra-progresso" style="width:${progressoPct}%;"></div>
+        ${timelineHtml}
+      </div>
+
+      ${order.status !== "entregue" ? `<div class="aviso-info-app" style="margin-bottom:0;"><span>⏳</span><span>Assim que o status mudar aqui, você vê na hora — não precisa atualizar a página.</span></div>` : `<div class="aviso-info-app" style="margin-bottom:0;background:var(--accent-light);"><span>🎉</span><span>Pedido entregue! Obrigado pela preferência.</span></div>`}
+
+      <div class="det-secao-app">Itens</div>
+      ${itensHtml || '<div style="color:var(--text-muted);font-size:13px;">Sem itens</div>'}
+
+      <div class="det-secao-app">Entrega</div>
+      <div style="font-size:13px;">${enderecoTxt}</div>
+
+      <div class="det-secao-app">Pagamento</div>
+      <div style="font-size:13px;">${MP_PAYMENT_LABELS[order.payment] || order.payment || "-"}</div>
+      ${order.totals?.delivery ? `<div style="font-size:12.5px;color:var(--text-muted);margin-top:4px;">Frete: ${mpFmtBR(order.totals.delivery)}</div>` : ""}
+      <div class="resumo-preco" style="padding-top:14px;">
+        <span class="label">Total</span>
+        <span class="valor" id="mpDetTotal" style="font-size:22px;">${mpFmtBR(order.totals?.total)}</span>
+      </div>
+
+      <div class="aviso-whatsapp" style="margin-top:16px;">
+        <span>💬</span>
+        <span>Dúvida sobre esse pedido? <a href="https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent('Olá! Tenho uma dúvida sobre o pedido ' + order.id)}" target="_blank" rel="noopener">Fala com a gente no WhatsApp</a></span>
+      </div>
+    </div>
+  `;
+
+  document.getElementById("mpBtnVoltarDetalhe").addEventListener("click", () => {
+    pararEscutaPedidoAtual();
+    if (veioDaLista) {
+      buscarPedidosPorTelefone(mpUltimaListaTelefone);
+    } else {
+      document.getElementById("mpBusca").style.display = "block";
+      document.getElementById("mpDetalhe").style.display = "none";
+    }
+  });
+}
 
 /* =========================================================
    INIT
