@@ -6,6 +6,8 @@
 <title>DFA SmartGlass — Painel da Loja</title>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <style>
   :root {
     --bg: #FAFAF8;
@@ -41,6 +43,18 @@
   }
 
   .layout { display: flex; min-height: 100vh; }
+  .layout.oculto { display: none; }
+  .tela-login { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--bg); }
+  .tela-login.oculto { display: none; }
+  .caixa-login { width: 340px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 28px; }
+  .caixa-login h2 { margin: 0 0 4px; }
+  .caixa-login .sub { color: var(--text-muted); font-size: 13px; margin-bottom: 18px; }
+  .caixa-login .campo { margin-bottom: 12px; }
+  .caixa-login .erro { color: #c0392b; font-size: 12.5px; margin-top: 8px; min-height: 16px; }
+  .badge-role { display: inline-block; font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 20px; background: var(--accent-light); color: var(--accent-dark); margin-left: 6px; }
+  .conta-sidebar { padding: 10px 16px; border-top: 1px solid var(--border); font-size: 12px; }
+  .conta-sidebar .nome-user { font-weight: 700; }
+  .conta-sidebar a { color: var(--accent-dark); cursor: pointer; text-decoration: underline; font-size: 11.5px; }
 
   .sidebar {
     width: 230px;
@@ -240,7 +254,30 @@
 </head>
 <body>
 
-<div class="layout">
+<div class="tela-login" id="telaLogin">
+  <div class="caixa-login">
+    <h2>DFA SmartGlass</h2>
+    <div class="sub" id="loginSubtitulo">Entre com seu usuário e senha</div>
+    <div class="campo"><label>E-mail</label><input type="email" id="loginEmail" autocomplete="username"></div>
+    <div class="campo"><label>Senha</label><input type="password" id="loginSenha" autocomplete="current-password"></div>
+    <button class="btn btn-primario" id="btnEntrar" style="width:100%;">Entrar</button>
+    <div class="erro" id="loginErro"></div>
+  </div>
+</div>
+
+<div class="tela-login oculto" id="telaBootstrapAdmin">
+  <div class="caixa-login">
+    <h2>Primeiro acesso</h2>
+    <div class="sub">Ainda não existe nenhum administrador cadastrado. Crie a conta de admin agora.</div>
+    <div class="campo"><label>Nome</label><input type="text" id="bootNome"></div>
+    <div class="campo"><label>E-mail</label><input type="email" id="bootEmail"></div>
+    <div class="campo"><label>Senha (mín. 6 caracteres)</label><input type="password" id="bootSenha"></div>
+    <button class="btn btn-primario" id="btnCriarAdmin" style="width:100%;">Criar administrador</button>
+    <div class="erro" id="bootErro"></div>
+  </div>
+</div>
+
+<div class="layout oculto" id="layoutApp">
 
   <nav class="sidebar">
     <div class="marca">
@@ -253,9 +290,16 @@
     <div class="nav-item" data-view="venda">🛒 Nova Venda</div>
     <div class="nav-item" data-view="producao">🏭 Produção</div>
     <div class="nav-item" data-view="estoque">📦 Estoque</div>
+    <div class="nav-item" data-view="catalogo">🎨 Catálogo</div>
     <div class="nav-item" data-view="relatorios">📈 Relatórios</div>
+    <div class="nav-item" data-view="funcionarios" id="navFuncionarios">👤 Funcionários</div>
     <div class="nav-item" id="btnLinkCliente">🔗 Link p/ clientes</div>
-    <div class="versao">v2.1 · Sistema completo (Firebase)</div>
+    <div class="versao">v2.2 · Sistema completo (Firebase)</div>
+    <div class="conta-sidebar">
+      <div class="nome-user" id="contaNome">—</div>
+      <div id="contaRole"></div>
+      <a id="linkTrocarSenha">Trocar minha senha</a> · <a id="linkSair">Sair</a>
+    </div>
   </nav>
 
   <main class="content">
@@ -421,6 +465,42 @@
       </div>
     </section>
 
+    <section class="view" id="view-catalogo">
+      <div class="topo-view">
+        <div><h1>Catálogo</h1><p class="subt">Preços e imagens dos vidros — usado pelo app do cliente, Nova Venda e área profissional</p></div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-secundario" id="btnImportarTabelaDFA">⬇ Importar tabela DFA</button>
+          <button class="btn btn-primario" id="btnNovoCatalogo">+ Novo item</button>
+        </div>
+      </div>
+      <div class="linha-form">
+        <input type="text" id="buscaCatalogo" class="input-largo" placeholder="Buscar por código ou descrição..." style="margin:0;">
+        <select id="filtroCategoriaCatalogo" style="max-width:220px;">
+          <option value="">Todas as categorias</option>
+          <option value="espelho">Espelho</option>
+          <option value="incolor">Vidro Incolor</option>
+          <option value="verde">Vidro Verde</option>
+          <option value="fume">Vidro Fumê</option>
+          <option value="fantasia">Vidro Fantasia</option>
+          <option value="temperado">Vidro Temperado</option>
+        </select>
+      </div>
+      <div class="pedidos-body">
+        <div class="pedidos-lista" id="listaCatalogo"></div>
+        <div class="pedido-detalhe" id="detalheCatalogo"><div class="vazio">Selecione um item do catálogo</div></div>
+      </div>
+    </section>
+
+    <section class="view" id="view-funcionarios">
+      <div class="topo-view">
+        <div><h1>Funcionários</h1><p class="subt">Quem tem acesso ao painel — só o administrador vê essa aba</p></div>
+        <button class="btn btn-primario" id="btnNovoFuncionario">+ Novo funcionário</button>
+      </div>
+      <div class="pedidos-body">
+        <div class="pedidos-lista" id="listaFuncionarios" style="width:100%;"></div>
+      </div>
+    </section>
+
     <section class="view" id="view-relatorios">
       <h1>Relatórios</h1>
       <p class="subt">Exporte dados do período em CSV (abre no Excel)</p>
@@ -489,6 +569,239 @@ if (firebaseConfig.apiKey === "COLE_AQUI") {
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
+const storage = firebase.storage();
+const auth = firebase.auth();
+
+/* =========================================================
+   LOGIN / CONTROLE DE ACESSO (admin, nivel2, nivel3)
+   ========================================================= */
+let usuarioAtual = null; // { uid, nome, email, role }
+
+const ROLE_LABEL = { admin: "Administrador", nivel2: "Usuário (acesso total)", nivel3: "Usuário (sem Relatórios)" };
+const ABAS_BLOQUEADAS_NIVEL3 = ["relatorios"];
+const ABAS_SO_ADMIN = ["funcionarios"];
+
+function mostrarTela(id) {
+  ["telaLogin", "telaBootstrapAdmin", "layoutApp"].forEach(t => {
+    document.getElementById(t).classList.toggle("oculto", t !== id);
+  });
+}
+
+// Ao carregar: verifica se já existe algum usuário cadastrado. Se não existir
+// nenhum, mostra a tela de criar o admin inicial em vez da tela de login normal.
+db.ref("usuarios").once("value").then(snap => {
+  const existemUsuarios = snap.exists() && Object.keys(snap.val()).length > 0;
+  if (!existemUsuarios && !auth.currentUser) {
+    mostrarTela("telaBootstrapAdmin");
+  }
+}).catch(() => {});
+
+document.getElementById("btnCriarAdmin").addEventListener("click", async () => {
+  const nome = document.getElementById("bootNome").value.trim();
+  const email = document.getElementById("bootEmail").value.trim();
+  const senha = document.getElementById("bootSenha").value;
+  const erroEl = document.getElementById("bootErro");
+  erroEl.textContent = "";
+  if (!nome || !email || senha.length < 6) { erroEl.textContent = "Preencha nome, e-mail e senha (mín. 6 caracteres)."; return; }
+  try {
+    const cred = await auth.createUserWithEmailAndPassword(email, senha);
+    await db.ref("usuarios/" + cred.user.uid).set({ uid: cred.user.uid, nome, email, role: "admin" });
+  } catch (err) {
+    erroEl.textContent = err.message;
+  }
+});
+
+document.getElementById("btnEntrar").addEventListener("click", fazerLogin);
+document.getElementById("loginSenha").addEventListener("keydown", e => { if (e.key === "Enter") fazerLogin(); });
+
+async function fazerLogin() {
+  const email = document.getElementById("loginEmail").value.trim();
+  const senha = document.getElementById("loginSenha").value;
+  const erroEl = document.getElementById("loginErro");
+  erroEl.textContent = "";
+  if (!email || !senha) { erroEl.textContent = "Informe e-mail e senha."; return; }
+  try {
+    await auth.signInWithEmailAndPassword(email, senha);
+  } catch (err) {
+    erroEl.textContent = "E-mail ou senha inválidos.";
+  }
+}
+
+document.getElementById("linkSair").addEventListener("click", () => auth.signOut());
+
+document.getElementById("linkTrocarSenha").addEventListener("click", () => {
+  abrirModal(`
+    <h3>Trocar minha senha</h3>
+    <div class="campo"><label>Nova senha (mín. 6 caracteres)</label><input type="password" id="novaSenhaInput"></div>
+    <div class="erro" id="trocarSenhaErro"></div>
+    <div class="modal-acoes">
+      <button class="btn btn-secundario" id="btnCancelarSenha">Cancelar</button>
+      <button class="btn btn-primario" id="btnSalvarSenha">Salvar</button>
+    </div>
+  `);
+  document.getElementById("btnCancelarSenha").addEventListener("click", fecharModal);
+  document.getElementById("btnSalvarSenha").addEventListener("click", async () => {
+    const nova = document.getElementById("novaSenhaInput").value;
+    if (nova.length < 6) { document.getElementById("trocarSenhaErro").textContent = "Mínimo 6 caracteres."; return; }
+    try {
+      await auth.currentUser.updatePassword(nova);
+      fecharModal();
+      alert("Senha alterada com sucesso.");
+    } catch (err) {
+      document.getElementById("trocarSenhaErro").textContent = err.message;
+    }
+  });
+});
+
+auth.onAuthStateChanged(async (user) => {
+  if (!user) {
+    usuarioAtual = null;
+    // só mostra login normal se já existir algum usuário no sistema
+    const snap = await db.ref("usuarios").once("value").catch(() => null);
+    const existemUsuarios = snap && snap.exists() && Object.keys(snap.val()).length > 0;
+    mostrarTela(existemUsuarios ? "telaLogin" : "telaBootstrapAdmin");
+    return;
+  }
+  const perfilSnap = await db.ref("usuarios/" + user.uid).once("value").catch(() => null);
+  const perfil = perfilSnap && perfilSnap.val();
+  if (!perfil) {
+    // autenticado no Firebase mas sem cadastro em usuarios/ (ex: acesso removido) — bloqueia
+    alert("Seu acesso foi removido. Fale com o administrador.");
+    auth.signOut();
+    return;
+  }
+  usuarioAtual = { uid: user.uid, nome: perfil.nome, email: perfil.email, role: perfil.role };
+  aplicarPermissoes();
+  mostrarTela("layoutApp");
+});
+
+function aplicarPermissoes() {
+  document.getElementById("contaNome").textContent = usuarioAtual.nome;
+  document.getElementById("contaRole").innerHTML = `<span class="badge-role">${ROLE_LABEL[usuarioAtual.role] || usuarioAtual.role}</span>`;
+
+  document.querySelectorAll(".nav-item[data-view]").forEach(el => {
+    const view = el.dataset.view;
+    let bloqueado = false;
+    if (usuarioAtual.role === "nivel3" && ABAS_BLOQUEADAS_NIVEL3.includes(view)) bloqueado = true;
+    if (usuarioAtual.role !== "admin" && ABAS_SO_ADMIN.includes(view)) bloqueado = true;
+    el.style.display = bloqueado ? "none" : "";
+  });
+
+  // se a view atual ficou bloqueada, volta pro dashboard
+  const viewAtiva = document.querySelector(".view.ativa");
+  if (viewAtiva) {
+    const id = viewAtiva.id.replace("view-", "");
+    const bloqueada = (usuarioAtual.role === "nivel3" && ABAS_BLOQUEADAS_NIVEL3.includes(id)) ||
+                       (usuarioAtual.role !== "admin" && ABAS_SO_ADMIN.includes(id));
+    if (bloqueada) {
+      document.querySelectorAll(".nav-item[data-view]").forEach(n => n.classList.remove("ativo"));
+      document.querySelectorAll(".view").forEach(v => v.classList.remove("ativa"));
+      document.querySelector('.nav-item[data-view="dashboard"]').classList.add("ativo");
+      document.getElementById("view-dashboard").classList.add("ativa");
+    }
+  }
+}
+
+/* =========================================================
+   FUNCIONÁRIOS (só admin) — cria login via app Firebase
+   secundário pra não derrubar a sessão do admin logado
+   ========================================================= */
+let funcionarios = {};
+
+db.ref("usuarios").on("value", (snap) => {
+  funcionarios = snap.val() || {};
+  if (usuarioAtual && usuarioAtual.role === "admin") renderListaFuncionarios();
+});
+
+function renderListaFuncionarios() {
+  const el = document.getElementById("listaFuncionarios");
+  if (!el) return;
+  const lista = Object.values(funcionarios).sort((a, b) => (a.nome || "").localeCompare(b.nome || ""));
+  el.innerHTML = lista.length ? lista.map(f => `
+    <div class="pedido-item" data-uid="${f.uid}" style="display:flex;justify-content:space-between;align-items:center;cursor:default;">
+      <div>
+        <div class="topo"><span>${f.nome}${f.uid === usuarioAtual.uid ? " (você)" : ""}</span></div>
+        <div class="cliente">${f.email} <span class="badge-role">${ROLE_LABEL[f.role] || f.role}</span></div>
+      </div>
+      <div style="display:flex;gap:6px;">
+        ${f.uid !== usuarioAtual.uid ? `<button class="btn btn-secundario" data-editar="${f.uid}" style="padding:6px 10px;font-size:12px;">Editar nível</button>
+        <button class="btn btn-secundario" data-remover="${f.uid}" style="padding:6px 10px;font-size:12px;color:#c0392b;">Remover acesso</button>` : ""}
+      </div>
+    </div>`).join("") : `<div style="padding:20px;color:var(--text-muted);text-align:center;font-size:13px;">Nenhum funcionário cadastrado</div>`;
+
+  el.querySelectorAll("[data-editar]").forEach(btn => btn.addEventListener("click", () => formEditarNivel(funcionarios[btn.dataset.editar])));
+  el.querySelectorAll("[data-remover]").forEach(btn => btn.addEventListener("click", () => {
+    const f = funcionarios[btn.dataset.remover];
+    if (confirm(`Remover o acesso de ${f.nome}? A conta de login continua existindo no Firebase, mas ela não vai mais conseguir entrar no painel.`)) {
+      db.ref("usuarios/" + f.uid).remove();
+    }
+  }));
+}
+
+function formEditarNivel(f) {
+  abrirModal(`
+    <h3>Editar nível de acesso</h3>
+    <div class="campo"><label>${f.nome} — ${f.email}</label></div>
+    <div class="campo"><label>Nível</label>
+      <select id="editRole">
+        <option value="nivel2" ${f.role === "nivel2" ? "selected" : ""}>Usuário (acesso total)</option>
+        <option value="nivel3" ${f.role === "nivel3" ? "selected" : ""}>Usuário (sem Relatórios)</option>
+        <option value="admin" ${f.role === "admin" ? "selected" : ""}>Administrador</option>
+      </select>
+    </div>
+    <div class="modal-acoes">
+      <button class="btn btn-secundario" id="btnCancelarNivel">Cancelar</button>
+      <button class="btn btn-primario" id="btnSalvarNivel">Salvar</button>
+    </div>
+  `);
+  document.getElementById("btnCancelarNivel").addEventListener("click", fecharModal);
+  document.getElementById("btnSalvarNivel").addEventListener("click", async () => {
+    await db.ref("usuarios/" + f.uid + "/role").set(document.getElementById("editRole").value);
+    fecharModal();
+  });
+}
+
+document.getElementById("btnNovoFuncionario").addEventListener("click", () => {
+  abrirModal(`
+    <h3>Novo funcionário</h3>
+    <div class="campo"><label>Nome *</label><input id="fNome"></div>
+    <div class="campo"><label>E-mail *</label><input id="fEmail" type="email"></div>
+    <div class="campo"><label>Senha inicial (mín. 6 caracteres) *</label><input id="fSenha" type="password"></div>
+    <div class="campo"><label>Nível</label>
+      <select id="fRole">
+        <option value="nivel2">Usuário (acesso total)</option>
+        <option value="nivel3">Usuário (sem Relatórios)</option>
+        <option value="admin">Administrador</option>
+      </select>
+    </div>
+    <div class="erro" id="fErro"></div>
+    <div class="modal-acoes">
+      <button class="btn btn-secundario" id="btnCancelarFunc">Cancelar</button>
+      <button class="btn btn-primario" id="btnSalvarFunc">Criar acesso</button>
+    </div>
+  `);
+  document.getElementById("btnCancelarFunc").addEventListener("click", fecharModal);
+  document.getElementById("btnSalvarFunc").addEventListener("click", async () => {
+    const nome = document.getElementById("fNome").value.trim();
+    const email = document.getElementById("fEmail").value.trim();
+    const senha = document.getElementById("fSenha").value;
+    const role = document.getElementById("fRole").value;
+    const erroEl = document.getElementById("fErro");
+    if (!nome || !email || senha.length < 6) { erroEl.textContent = "Preencha nome, e-mail e senha (mín. 6 caracteres)."; return; }
+    try {
+      // Cria o usuário num app Firebase secundário, pra não trocar a sessão logada do admin
+      const secApp = firebase.initializeApp(firebaseConfig, "Secundario-" + Date.now());
+      const cred = await secApp.auth().createUserWithEmailAndPassword(email, senha);
+      await db.ref("usuarios/" + cred.user.uid).set({ uid: cred.user.uid, nome, email, role });
+      await secApp.auth().signOut();
+      await secApp.delete();
+      fecharModal();
+    } catch (err) {
+      erroEl.textContent = err.message;
+    }
+  });
+});
+
 
 /* =========================================================
    ENDEREÇO DA LOJA E REGRAS DE ENTREGA
@@ -1393,6 +1706,236 @@ function formEntradaEstoque(p) {
     fecharModal();
   });
 }
+
+/* =========================================================
+   CATÁLOGO (preços + imagens — fonte única p/ app cliente,
+   Nova Venda e área profissional)
+   ========================================================= */
+let catalogo = {};
+let catalogoSelecionadoId = null;
+
+db.ref("catalogo").on("value", (snap) => {
+  catalogo = snap.val() || {};
+  renderListaCatalogo();
+  if (catalogoSelecionadoId) renderDetalheCatalogo(catalogo[catalogoSelecionadoId]);
+});
+
+function catalogoArray() {
+  return Object.values(catalogo).sort((a, b) => (a.codigo || "").localeCompare(b.codigo || ""));
+}
+
+document.getElementById("buscaCatalogo").addEventListener("input", renderListaCatalogo);
+document.getElementById("filtroCategoriaCatalogo").addEventListener("change", renderListaCatalogo);
+
+function renderListaCatalogo() {
+  const busca = document.getElementById("buscaCatalogo").value.trim().toLowerCase();
+  const cat = document.getElementById("filtroCategoriaCatalogo").value;
+  let lista = catalogoArray();
+  if (busca) lista = lista.filter(p => (p.codigo || "").toLowerCase().includes(busca) || (p.descricao || "").toLowerCase().includes(busca));
+  if (cat) lista = lista.filter(p => p.categoria === cat);
+
+  const el = document.getElementById("listaCatalogo");
+  el.innerHTML = lista.length ? lista.map(p => `
+    <div class="pedido-item ${p.id === catalogoSelecionadoId ? 'selecionado' : ''}" data-id="${p.id}">
+      <div class="topo"><span>${p.codigo} — ${p.descricao}</span></div>
+      <div class="cliente">${p.espessura_mm}mm · ${rotuloAcabamento(p.acabamento)} · ${fmtBR(p.preco_consumidor)}/m²${p.preco_profissional ? ' · Prof: ' + fmtBR(p.preco_profissional) + '/m²' : ''}</div>
+    </div>`).join("") : `<div style="padding:20px;color:var(--text-muted);text-align:center;font-size:13px;">Nenhum item no catálogo ainda</div>`;
+
+  el.querySelectorAll(".pedido-item").forEach(e => e.addEventListener("click", () => {
+    catalogoSelecionadoId = e.dataset.id;
+    renderListaCatalogo();
+    renderDetalheCatalogo(catalogo[catalogoSelecionadoId]);
+  }));
+}
+
+function rotuloAcabamento(a) {
+  return { cortado: "Cortado", lapidado: "Lapidado", bisotado: "Bisotado" }[a] || (a || "—");
+}
+function rotuloCategoria(c) {
+  return { espelho: "Espelho", incolor: "Vidro Incolor", verde: "Vidro Verde", fume: "Vidro Fumê", fantasia: "Vidro Fantasia", temperado: "Vidro Temperado" }[c] || (c || "—");
+}
+
+function renderDetalheCatalogo(p) {
+  const el = document.getElementById("detalheCatalogo");
+  if (!p) { el.innerHTML = `<div class="vazio">Selecione um item do catálogo</div>`; return; }
+  el.innerHTML = `
+    <div class="det-topo">
+      <h3>${p.codigo} — ${p.descricao}</h3>
+      <span class="badge-status" style="background:var(--accent);">${rotuloCategoria(p.categoria)}</span>
+    </div>
+    ${p.imagem ? `<img src="${p.imagem}" style="width:140px;height:140px;object-fit:cover;border-radius:8px;margin-top:12px;background:#EFEFEA;">` : `<div style="width:140px;height:140px;border-radius:8px;margin-top:12px;background:#EFEFEA;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:12px;">Sem imagem</div>`}
+    <div class="cards-metricas" style="margin-top:14px;">
+      <div class="metrica"><div class="rotulo">Espessura</div><div class="valor">${p.espessura_mm}mm</div></div>
+      <div class="metrica"><div class="rotulo">Acabamento</div><div class="valor">${rotuloAcabamento(p.acabamento)}</div></div>
+      <div class="metrica"><div class="rotulo">Preço consumidor</div><div class="valor">${fmtBR(p.preco_consumidor)}/m²</div></div>
+      <div class="metrica"><div class="rotulo">Preço profissional</div><div class="valor ${!p.preco_profissional ? 'danger' : ''}">${p.preco_profissional ? fmtBR(p.preco_profissional) + '/m²' : 'Não definido'}</div></div>
+    </div>
+    <div class="det-acoes">
+      <button class="btn btn-secundario" id="btnEditarCatalogo">Editar</button>
+      <button class="btn btn-secundario" id="btnExcluirCatalogo" style="color:#c0392b;">Excluir</button>
+    </div>
+  `;
+  document.getElementById("btnEditarCatalogo").addEventListener("click", () => formCatalogo(p));
+  document.getElementById("btnExcluirCatalogo").addEventListener("click", () => {
+    if (confirm(`Excluir "${p.codigo} — ${p.descricao}" do catálogo?`)) {
+      db.ref("catalogo/" + p.id).remove();
+      catalogoSelecionadoId = null;
+      el.innerHTML = `<div class="vazio">Selecione um item do catálogo</div>`;
+    }
+  });
+}
+
+document.getElementById("btnNovoCatalogo").addEventListener("click", () => formCatalogo(null));
+
+function formCatalogo(p) {
+  const d = p || { id: "CAT-" + Date.now().toString(36).toUpperCase(), codigo: "", descricao: "", categoria: "incolor", espessura_mm: 4, acabamento: "cortado", preco_consumidor: 0, preco_profissional: "", imagem: "" };
+  abrirModal(`
+    <h3>${p ? "Editar item do catálogo" : "Novo item do catálogo"}</h3>
+    <div class="linha-form">
+      <div class="campo"><label>Código DFA *</label><input id="cCodigo" value="${d.codigo}" placeholder="Ex: EP04"></div>
+      <div class="campo"><label>Categoria</label>
+        <select id="cCategoria">
+          ${["espelho","incolor","verde","fume","fantasia","temperado"].map(c => `<option value="${c}" ${d.categoria === c ? "selected" : ""}>${rotuloCategoria(c)}</option>`).join("")}
+        </select>
+      </div>
+    </div>
+    <div class="campo"><label>Descrição *</label><input id="cDescricao" value="${d.descricao}" placeholder="Ex: Espelho 04mm"></div>
+    <div class="linha-form">
+      <div class="campo"><label>Espessura (mm)</label><input id="cEspessura" type="number" value="${d.espessura_mm}"></div>
+      <div class="campo"><label>Acabamento</label>
+        <select id="cAcabamento">
+          <option value="cortado" ${d.acabamento === "cortado" ? "selected" : ""}>Cortado</option>
+          <option value="lapidado" ${d.acabamento === "lapidado" ? "selected" : ""}>Lapidado</option>
+          <option value="bisotado" ${d.acabamento === "bisotado" ? "selected" : ""}>Bisotado</option>
+        </select>
+      </div>
+    </div>
+    <div class="linha-form">
+      <div class="campo"><label>Preço consumidor (R$/m²) *</label><input id="cPrecoConsumidor" type="number" step="0.01" value="${d.preco_consumidor}"></div>
+      <div class="campo"><label>Preço profissional (R$/m²)</label><input id="cPrecoProfissional" type="number" step="0.01" value="${d.preco_profissional}" placeholder="Deixe vazio se ainda não definido"></div>
+    </div>
+    <div class="campo">
+      <label>Imagem</label>
+      <input id="cImagemFile" type="file" accept="image/*">
+      <div id="cImagemPreviewWrap" style="margin-top:8px;">${d.imagem ? `<img id="cImagemPreview" src="${d.imagem}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;">` : ""}</div>
+      <div id="cImagemStatus" style="font-size:12px;color:var(--text-muted);margin-top:4px;"></div>
+    </div>
+    <div class="modal-acoes">
+      <button class="btn btn-secundario" id="btnCancelarCatalogo">Cancelar</button>
+      <button class="btn btn-primario" id="btnSalvarCatalogo">Salvar</button>
+    </div>
+  `);
+
+  let novaImagemUrl = d.imagem || "";
+
+  document.getElementById("btnCancelarCatalogo").addEventListener("click", fecharModal);
+  document.getElementById("btnSalvarCatalogo").addEventListener("click", async () => {
+    const codigo = document.getElementById("cCodigo").value.trim();
+    const descricao = document.getElementById("cDescricao").value.trim();
+    if (!codigo || !descricao) { alert("Informe código e descrição."); return; }
+    const precoConsumidor = parseFloat(document.getElementById("cPrecoConsumidor").value) || 0;
+    const precoProfRaw = document.getElementById("cPrecoProfissional").value;
+
+    const salvarBtn = document.getElementById("btnSalvarCatalogo");
+    const arquivo = document.getElementById("cImagemFile").files[0];
+
+    salvarBtn.disabled = true;
+    salvarBtn.textContent = "Salvando...";
+
+    try {
+      if (arquivo) {
+        document.getElementById("cImagemStatus").textContent = "Enviando imagem...";
+        const ref = storage.ref("catalogo/" + d.id + "-" + Date.now() + "-" + arquivo.name);
+        await ref.put(arquivo);
+        novaImagemUrl = await ref.getDownloadURL();
+      }
+
+      const novo = { ...d, codigo, descricao,
+        categoria: document.getElementById("cCategoria").value,
+        espessura_mm: parseFloat(document.getElementById("cEspessura").value) || 0,
+        acabamento: document.getElementById("cAcabamento").value,
+        preco_consumidor: precoConsumidor,
+        preco_profissional: precoProfRaw ? parseFloat(precoProfRaw) : null,
+        imagem: novaImagemUrl };
+      await db.ref("catalogo/" + novo.id).set(novo);
+      catalogoSelecionadoId = novo.id;
+      fecharModal();
+    } catch (err) {
+      alert("Erro ao salvar: " + err.message);
+      salvarBtn.disabled = false;
+      salvarBtn.textContent = "Salvar";
+    }
+  });
+}
+
+/* Importação em lote da tabela de preços DFA (cadastro profissional, ago/2026).
+   Só cria itens com código que ainda não existe no catálogo — não sobrescreve o que já foi editado. */
+const TABELA_DFA_IMPORT = [
+  { codigo: "EP03", descricao: "Espelho 03mm Cortado", categoria: "espelho", espessura_mm: 3, acabamento: "cortado", preco_consumidor: 142.86 },
+  { codigo: "EP03L", descricao: "Espelho 03mm Lapidado", categoria: "espelho", espessura_mm: 3, acabamento: "lapidado", preco_consumidor: 145.28 },
+  { codigo: "EP04", descricao: "Espelho 04mm Cortado", categoria: "espelho", espessura_mm: 4, acabamento: "cortado", preco_consumidor: 157.00 },
+  { codigo: "EP04L", descricao: "Espelho 04mm Lapidado", categoria: "espelho", espessura_mm: 4, acabamento: "lapidado", preco_consumidor: 159.90 },
+  { codigo: "EP04B", descricao: "Espelho 04mm Bisotado", categoria: "espelho", espessura_mm: 4, acabamento: "bisotado", preco_consumidor: 187.04 },
+  { codigo: "EP06", descricao: "Espelho 06mm Cortado", categoria: "espelho", espessura_mm: 6, acabamento: "cortado", preco_consumidor: 415.60 },
+  { codigo: "EP06L", descricao: "Espelho 06mm Lapidado", categoria: "espelho", espessura_mm: 6, acabamento: "lapidado", preco_consumidor: 440.79 },
+  { codigo: "EB04", descricao: "Espelho Bronze 04mm Cortado", categoria: "espelho", espessura_mm: 4, acabamento: "cortado", preco_consumidor: 396.94 },
+  { codigo: "EB04L", descricao: "Espelho Bronze 04mm Lapidado", categoria: "espelho", espessura_mm: 4, acabamento: "lapidado", preco_consumidor: 415.59 },
+  { codigo: "EB04B", descricao: "Espelho Bronze 04mm Bisotado", categoria: "espelho", espessura_mm: 4, acabamento: "bisotado", preco_consumidor: 442.04 },
+  { codigo: "EPF4", descricao: "Espelho Fumê 04mm Cortado", categoria: "espelho", espessura_mm: 4, acabamento: "cortado", preco_consumidor: 396.94 },
+  { codigo: "EPF4L", descricao: "Espelho Fumê 04mm Lapidado", categoria: "espelho", espessura_mm: 4, acabamento: "lapidado", preco_consumidor: 415.59 },
+  { codigo: "EPF4B", descricao: "Espelho Fumê 04mm Bisotado", categoria: "espelho", espessura_mm: 4, acabamento: "bisotado", preco_consumidor: 442.04 },
+  { codigo: "CAN", descricao: "Canelado", categoria: "fantasia", espessura_mm: 4, acabamento: "cortado", preco_consumidor: 108.90 },
+  { codigo: "MB", descricao: "Mini Boreal", categoria: "fantasia", espessura_mm: 4, acabamento: "cortado", preco_consumidor: 108.90 },
+  { codigo: "PON", descricao: "Pontilhado", categoria: "fantasia", espessura_mm: 4, acabamento: "cortado", preco_consumidor: 148.12 },
+  { codigo: "AR", descricao: "Aramado", categoria: "fantasia", espessura_mm: 6, acabamento: "cortado", preco_consumidor: 636.00 },
+  { codigo: "I02", descricao: "Vidro Incolor 02mm Cortado", categoria: "incolor", espessura_mm: 2, acabamento: "cortado", preco_consumidor: 71.87 },
+  { codigo: "I03", descricao: "Vidro Incolor 03mm Cortado", categoria: "incolor", espessura_mm: 3, acabamento: "cortado", preco_consumidor: 67.50 },
+  { codigo: "I03L", descricao: "Vidro Incolor 03mm Lapidado", categoria: "incolor", espessura_mm: 3, acabamento: "lapidado", preco_consumidor: 76.90 },
+  { codigo: "I04", descricao: "Vidro Incolor 04mm Cortado", categoria: "incolor", espessura_mm: 4, acabamento: "cortado", preco_consumidor: 79.90 },
+  { codigo: "I04L", descricao: "Vidro Incolor 04mm Lapidado", categoria: "incolor", espessura_mm: 4, acabamento: "lapidado", preco_consumidor: 87.90 },
+  { codigo: "I06", descricao: "Vidro Incolor 06mm Cortado", categoria: "incolor", espessura_mm: 6, acabamento: "cortado", preco_consumidor: 131.88 },
+  { codigo: "I06L", descricao: "Vidro Incolor 06mm Lapidado", categoria: "incolor", espessura_mm: 6, acabamento: "lapidado", preco_consumidor: 134.00 },
+  { codigo: "I08", descricao: "Vidro Incolor 08mm Cortado", categoria: "incolor", espessura_mm: 8, acabamento: "cortado", preco_consumidor: 145.18 },
+  { codigo: "I08L", descricao: "Vidro Incolor 08mm Lapidado", categoria: "incolor", espessura_mm: 8, acabamento: "lapidado", preco_consumidor: 149.90 },
+  { codigo: "I10", descricao: "Vidro Incolor 10mm Cortado", categoria: "incolor", espessura_mm: 10, acabamento: "cortado", preco_consumidor: 296.26 },
+  { codigo: "I10L", descricao: "Vidro Incolor 10mm Lapidado", categoria: "incolor", espessura_mm: 10, acabamento: "lapidado", preco_consumidor: 306.26 },
+  { codigo: "V04", descricao: "Vidro Verde 04mm Cortado", categoria: "verde", espessura_mm: 4, acabamento: "cortado", preco_consumidor: 132.98 },
+  { codigo: "V04L", descricao: "Vidro Verde 04mm Lapidado", categoria: "verde", espessura_mm: 4, acabamento: "lapidado", preco_consumidor: 165.77 },
+  { codigo: "V06", descricao: "Vidro Verde 06mm Cortado", categoria: "verde", espessura_mm: 6, acabamento: "cortado", preco_consumidor: 157.18 },
+  { codigo: "V06L", descricao: "Vidro Verde 06mm Lapidado", categoria: "verde", espessura_mm: 6, acabamento: "lapidado", preco_consumidor: 161.59 },
+  { codigo: "V08", descricao: "Vidro Verde 08mm Cortado", categoria: "verde", espessura_mm: 8, acabamento: "cortado", preco_consumidor: 169.90 },
+  { codigo: "V08L", descricao: "Vidro Verde 08mm Lapidado", categoria: "verde", espessura_mm: 8, acabamento: "lapidado", preco_consumidor: 179.90 },
+  { codigo: "FU03", descricao: "Vidro Fumê 03mm Cortado", categoria: "fume", espessura_mm: 3, acabamento: "cortado", preco_consumidor: 103.20 },
+  { codigo: "FU03L", descricao: "Vidro Fumê 03mm Lapidado", categoria: "fume", espessura_mm: 3, acabamento: "lapidado", preco_consumidor: 140.36 },
+  { codigo: "FU04", descricao: "Vidro Fumê 04mm Cortado", categoria: "fume", espessura_mm: 4, acabamento: "cortado", preco_consumidor: 148.70 },
+  { codigo: "FU04L", descricao: "Vidro Fumê 04mm Lapidado", categoria: "fume", espessura_mm: 4, acabamento: "lapidado", preco_consumidor: 173.03 },
+  { codigo: "FU06", descricao: "Vidro Fumê 06mm Cortado", categoria: "fume", espessura_mm: 6, acabamento: "cortado", preco_consumidor: 175.62 },
+  { codigo: "FU06L", descricao: "Vidro Fumê 06mm Lapidado", categoria: "fume", espessura_mm: 6, acabamento: "lapidado", preco_consumidor: 181.38 },
+  { codigo: "FU08", descricao: "Vidro Fumê 08mm Cortado", categoria: "fume", espessura_mm: 8, acabamento: "cortado", preco_consumidor: 169.90 },
+  { codigo: "FU08L", descricao: "Vidro Fumê 08mm Lapidado", categoria: "fume", espessura_mm: 8, acabamento: "lapidado", preco_consumidor: 179.90 },
+  { codigo: "I06T", descricao: "Vidro Incolor 06mm Temperado", categoria: "temperado", espessura_mm: 6, acabamento: "cortado", preco_consumidor: 158.94 },
+  { codigo: "I08T", descricao: "Vidro Incolor 08mm Temperado", categoria: "temperado", espessura_mm: 8, acabamento: "cortado", preco_consumidor: 192.00 },
+  { codigo: "I10T", descricao: "Vidro Incolor 10mm Temperado", categoria: "temperado", espessura_mm: 10, acabamento: "cortado", preco_consumidor: 337.78 },
+  { codigo: "V06T", descricao: "Vidro Verde 06mm Temperado", categoria: "temperado", espessura_mm: 6, acabamento: "cortado", preco_consumidor: 233.58 },
+  { codigo: "V08T", descricao: "Vidro Verde 08mm Temperado", categoria: "temperado", espessura_mm: 8, acabamento: "cortado", preco_consumidor: 198.00 },
+  { codigo: "FU06T", descricao: "Vidro Fumê 06mm Temperado", categoria: "temperado", espessura_mm: 6, acabamento: "cortado", preco_consumidor: 231.04 },
+  { codigo: "FU08T", descricao: "Vidro Fumê 08mm Temperado", categoria: "temperado", espessura_mm: 8, acabamento: "cortado", preco_consumidor: 198.00 },
+];
+
+document.getElementById("btnImportarTabelaDFA").addEventListener("click", async () => {
+  const existentes = new Set(catalogoArray().map(p => p.codigo));
+  const novos = TABELA_DFA_IMPORT.filter(item => !existentes.has(item.codigo));
+  if (!novos.length) { alert("Todos os códigos da tabela DFA já estão cadastrados no catálogo."); return; }
+  if (!confirm(`Importar ${novos.length} item(ns) novo(s) da tabela DFA?\n\nItens já cadastrados (mesmo código) não serão alterados.\nPreço profissional fica em branco — defina depois com o Silvio.`)) return;
+
+  const updates = {};
+  novos.forEach(item => {
+    const id = "CAT-" + item.codigo;
+    updates[id] = { id, ...item, preco_profissional: null, imagem: "" };
+  });
+  await db.ref("catalogo").update(updates);
+  alert(`${novos.length} item(ns) importado(s). Agora é só abrir cada um e adicionar a foto.`);
+});
 
 /* =========================================================
    RELATÓRIOS
