@@ -293,6 +293,7 @@
     <div class="nav-item" data-view="catalogo">🎨 Catálogo</div>
     <div class="nav-item" data-view="relatorios">📈 Relatórios</div>
     <div class="nav-item" data-view="funcionarios" id="navFuncionarios">👤 Funcionários</div>
+    <div class="nav-item" data-view="configuracoes" id="navConfiguracoes">⚙️ Configurações</div>
     <div class="nav-item" id="btnLinkCliente">🔗 Link p/ clientes</div>
     <div class="versao">v2.2 · Sistema completo (Firebase)</div>
     <div class="conta-sidebar">
@@ -502,6 +503,25 @@
       </div>
     </section>
 
+    <section class="view" id="view-configuracoes">
+      <div class="topo-view">
+        <div><h1>Configurações</h1><p class="subt">WhatsApp e código de acesso profissional usados pelo app do cliente</p></div>
+      </div>
+      <div style="max-width:420px;">
+        <div class="campo">
+          <label>Número de WhatsApp (recebe pedidos e pedidos de código profissional)</label>
+          <input id="cfgWhatsapp" placeholder="Ex: 5531999999999 (DDI+DDD+número, só números)">
+        </div>
+        <div class="campo">
+          <label>Código de acesso profissional (PIN)</label>
+          <input id="cfgPin" placeholder="Ex: 4127">
+          <div style="font-size:11.5px;color:var(--text-muted);margin-top:4px;">O profissional pede esse código pelo WhatsApp acima; você troca aqui sempre que quiser.</div>
+        </div>
+        <button class="btn btn-primario" id="btnSalvarConfig">Salvar configurações</button>
+        <div id="cfgStatus" style="font-size:12.5px;color:var(--text-muted);margin-top:8px;"></div>
+      </div>
+    </section>
+
     <section class="view" id="view-relatorios">
       <h1>Relatórios</h1>
       <p class="subt">Exporte dados do período em CSV (abre no Excel)</p>
@@ -580,7 +600,7 @@ let usuarioAtual = null; // { uid, nome, email, role }
 
 const ROLE_LABEL = { admin: "Administrador", nivel2: "Usuário (acesso total)", nivel3: "Usuário (sem Relatórios)" };
 const ABAS_BLOQUEADAS_NIVEL3 = ["relatorios"];
-const ABAS_SO_ADMIN = ["funcionarios"];
+const ABAS_SO_ADMIN = ["funcionarios", "configuracoes"];
 
 function mostrarTela(id) {
   ["telaLogin", "telaBootstrapAdmin", "layoutApp"].forEach(t => {
@@ -1975,6 +1995,32 @@ document.getElementById("btnAplicarFotos").addEventListener("click", async () =>
   if (!confirm(`Aplicar foto existente em ${aplicadas} item(ns)?\n\n${semMatch} item(ns) continuarão sem foto (não existe imagem equivalente real na sua pasta — ex: verde, fumê, pontilhado).`)) return;
   await db.ref("catalogo").update(updates);
   alert(`${aplicadas} item(ns) atualizado(s) com foto.`);
+});
+
+/* =========================================================
+   CONFIGURAÇÕES (whatsapp + pin profissional — só admin)
+   ========================================================= */
+db.ref("config").on("value", (snap) => {
+  const cfg = snap.val() || {};
+  if (document.getElementById("cfgWhatsapp")) {
+    document.getElementById("cfgWhatsapp").value = cfg.whatsapp_numero || "";
+    document.getElementById("cfgPin").value = cfg.pin_profissional || "";
+  }
+});
+
+document.getElementById("btnSalvarConfig").addEventListener("click", async () => {
+  const whats = document.getElementById("cfgWhatsapp").value.trim().replace(/\D/g, "");
+  const pin = document.getElementById("cfgPin").value.trim();
+  const status = document.getElementById("cfgStatus");
+  if (!whats || !pin) { status.textContent = "Preencha os dois campos."; status.style.color = "#c0392b"; return; }
+  try {
+    await db.ref("config").update({ whatsapp_numero: whats, pin_profissional: pin });
+    status.textContent = "Salvo — já vale pro app do cliente na próxima vez que ele carregar.";
+    status.style.color = "var(--text-muted)";
+  } catch (err) {
+    status.textContent = "Erro ao salvar: " + err.message;
+    status.style.color = "#c0392b";
+  }
 });
 
 /* =========================================================
