@@ -1105,11 +1105,80 @@ function entrarNoApp(modo) {
   } else {
     badge.innerHTML = "";
   }
+  if (typeof atualizarListaVidros === "function") atualizarListaVidros();
 }
 
-// Carrega config (whatsapp + pin) do Firebase e decide qual tela mostrar
-db.ref("config").once("value").then(async (snap) => {
-  const cfg = snap.val() || {};
+/* =========================================================
+   CATÁLOGO (Firebase) — sincroniza preço do consumidor e monta
+   a lista completa de SKUs pro modo profissional
+   ========================================================= */
+let catalogoFirebase = {};
+
+function precoDoCatalogo(codigo) {
+  if (!codigo || !catalogoFirebase[codigo]) return null;
+  return catalogoFirebase[codigo].preco_consumidor;
+}
+
+function categoriaCor(cat) {
+  return { espelho: "turquesa", incolor: "verde", verde: "verde", fume: "roxo", fantasia: "laranja", temperado: "azul" }[cat] || "azul";
+}
+function categoriaLabel(cat) {
+  return { espelho: "Espelho", incolor: "Vidro Incolor", verde: "Vidro Verde", fume: "Vidro Fumê", fantasia: "Fantasia", temperado: "Temperado" }[cat] || (cat || "");
+}
+function rotuloAcabamentoApp(a) {
+  return { cortado: "Cortado", lapidado: "Lapidado", bisotado: "Bisotado" }[a] || "";
+}
+
+function construirListaProfissional() {
+  return Object.values(catalogoFirebase)
+    .sort((a, b) => (a.codigo || "").localeCompare(b.codigo || ""))
+    .map(item => ({
+      id: "cat_" + item.id,
+      nome: `${item.descricao} (${item.codigo})`,
+      preco_m2: (item.preco_profissional !== null && item.preco_profissional !== undefined && item.preco_profissional !== "") ? item.preco_profissional : item.preco_consumidor,
+      espessura_mm: item.espessura_mm,
+      img: item.imagem || "img/vidro-comum.jpg",
+      tarja: categoriaLabel(item.categoria) + (item.acabamento ? " · " + rotuloAcabamentoApp(item.acabamento) : ""),
+      cor: categoriaCor(item.categoria),
+      min_mm: item.codigo === "AR" ? 250 : 50
+    }));
+}
+
+// Reconstrói a lista mostrada no grid principal de acordo com o modo atual.
+// Consumidor: mantém as categorias simplificadas, com preço sincronizado do
+// catálogo quando existir item correspondente (codigo_catalogo). Profissional:
+// mostra os SKUs reais do catálogo, com preço profissional (ou consumidor,
+// se ainda não definido).
+function atualizarListaVidros() {
+  if (modoAtual === "profissional") {
+    VIDROS = Object.keys(catalogoFirebase).length ? construirListaProfissional() : VIDROS_PADRAO;
+  } else {
+    VIDROS = VIDROS_PADRAO.map(v => {
+      const preco = precoDoCatalogo(v.codigo_catalogo);
+      return preco != null ? { ...v, preco_m2: preco } : v;
+    });
+    PRODUTOS_DESTAQUE.forEach(p => {
+      if (p.codigo_catalogo) {
+        const preco = precoDoCatalogo(p.codigo_catalogo);
+        if (preco != null) p.preco_m2 = preco;
+      }
+    });
+  }
+  estado.vidroSelecionado = null;
+  if (typeof renderVidros === "function") renderVidros();
+  if (typeof renderRecomendados === "function") renderRecomendados();
+  if (typeof validarMedidas === "function") validarMedidas();
+  if (typeof atualizarTudo === "function") atualizarTudo();
+}
+
+// Carrega config (whatsapp + pin) e catálogo do Firebase, decide qual tela mostrar
+Promise.all([
+  db.ref("config").once("value"),
+  db.ref("catalogo").once("value")
+]).then(async ([cfgSnap, catSnap]) => {
+  const cfg = cfgSnap.val() || {};
+  catalogoFirebase = catSnap.val() || {};
+
   if (cfg.whatsapp_numero) {
     WHATSAPP_NUMERO = cfg.whatsapp_numero;
     ["linkWhatsapp", "linkWhatsappBanner", "linkWhatsappRecom"].forEach(id => {
@@ -1120,6 +1189,8 @@ db.ref("config").once("value").then(async (snap) => {
   PIN_PROFISSIONAL = cfg.pin_profissional || "";
   document.getElementById("linkPedirCodigoZap").href =
     `https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent("Olá! Sou profissional e preciso do código de acesso ao app DFA Vidros.")}`;
+
+  atualizarListaVidros();
 
   // já logado neste aparelho?
   const telSalvo = localStorage.getItem(CHAVE_STORAGE_TEL);
@@ -1177,14 +1248,15 @@ const DADOS_PIX = {
 // TODO: Substituir pelo número real da loja (apenas números, com DDI 55 e DDD) — atualizado automaticamente pelo Firebase (config/whatsapp_numero) quando definido no admin
 let WHATSAPP_NUMERO = "5531999999999"; 
 
-const VIDROS = [
-  { id: "comum",     nome: "Vidro Comum",     preco_m2: 100.00, espessura_mm: 4,  img: "img/vidro-comum.jpg",     tarja: "Mais vendido",  cor: "verde", min_mm: 50 },
-  { id: "temperado", nome: "Vidro Temperado", preco_m2: 220.00, espessura_mm: 8,  img: "img/vidro-temperado.jpg", tarja: "Mais seguro",   cor: "azul", min_mm: 50 },
-  { id: "laminado",  nome: "Vidro Laminado",  preco_m2: 300.00, espessura_mm: 8,  img: "img/vidro-laminado.jpg",  tarja: "Premium",       cor: "roxo", min_mm: 50 },
-  { id: "canelado",  nome: "Vidro Canelado",  preco_m2: 120.00, espessura_mm: 4,  img: "img/vidro-canelado.jpg",  tarja: "Decorativo",    cor: "laranja", min_mm: 50 },
-  { id: "martelado", nome: "Vidro Martelado", preco_m2: 120.00, espessura_mm: 4,  img: "img/vidro-martelado.jpg", tarja: "Textura",       cor: "rosa", min_mm: 50 },
-  { id: "aramado",   nome: "Vidro Aramado",   preco_m2: 130.00, espessura_mm: 6,  img: "img/vidroaramado.jpeg.jfif", tarja: "Segurança", cor: "turquesa", min_mm: 250 }
+const VIDROS_PADRAO = [
+  { id: "comum",     nome: "Vidro Comum",     preco_m2: 100.00, espessura_mm: 4,  img: "img/vidro-comum.jpg",     tarja: "Mais vendido",  cor: "verde", min_mm: 50, codigo_catalogo: "I04" },
+  { id: "temperado", nome: "Vidro Temperado", preco_m2: 220.00, espessura_mm: 8,  img: "img/vidro-temperado.jpg", tarja: "Mais seguro",   cor: "azul", min_mm: 50, codigo_catalogo: "I08T" },
+  { id: "laminado",  nome: "Vidro Laminado",  preco_m2: 300.00, espessura_mm: 8,  img: "img/vidro-laminado.jpg",  tarja: "Sob consulta",  cor: "roxo", min_mm: 50, codigo_catalogo: null },
+  { id: "canelado",  nome: "Vidro Canelado",  preco_m2: 120.00, espessura_mm: 4,  img: "img/vidro-canelado.jpg",  tarja: "Decorativo",    cor: "laranja", min_mm: 50, codigo_catalogo: "CAN" },
+  { id: "martelado", nome: "Vidro Martelado", preco_m2: 120.00, espessura_mm: 4,  img: "img/vidro-martelado.jpg", tarja: "Textura",       cor: "rosa", min_mm: 50, codigo_catalogo: "MB" },
+  { id: "aramado",   nome: "Vidro Aramado",   preco_m2: 130.00, espessura_mm: 6,  img: "img/vidroaramado.jpeg.jfif", tarja: "Segurança", cor: "turquesa", min_mm: 250, codigo_catalogo: "AR" }
 ];
+let VIDROS = VIDROS_PADRAO;
 
 const PRODUTOS_DESTAQUE = [
   { id: "box-abrir",      nome: "Box Abrir",       preco_m2: 350.00, espessura_mm: 8, img: "img/box-abrir.jpg",      tarja: "Sob medida", cor: "azul", min_mm: 50 },
@@ -1195,10 +1267,10 @@ const PRODUTOS_DESTAQUE = [
   { id: "box-flex",       nome: "Box Flex",        preco_m2: 450.00, espessura_mm: 8, img: "img/box-flex.jpg",       tarja: "Sob medida", cor: "turquesa", min_mm: 50 },
   { id: "box-frontal",    nome: "Box Frontal",     preco_m2: 370.00, espessura_mm: 8, img: "img/box-frontal.jpg",    tarja: "Sob medida", cor: "azul", min_mm: 50 },
   { id: "box-teto",       nome: "Box Teto",        preco_m2: 500.00, espessura_mm: 8, img: "img/box-teto.jpg",       tarja: "Premium",    cor: "rosa", min_mm: 50 },
-  { id: "espelho-comum",  nome: "Espelho Comum",   preco_m2: 130.00, espessura_mm: 4, img: "img/espelho-comum.jpg",  tarja: "Popular",    cor: "verde", min_mm: 50 },
-  { id: "espelho-decorativo", nome: "Espelho Decorativo", preco_m2: 220.00, espessura_mm: 4, img: "img/espelho-decorativo.jpg", tarja: "Decorativo", cor: "rosa", min_mm: 50 },
-  { id: "espelho-lapidado", nome: "Espelho Lapidado", preco_m2: 180.00, espessura_mm: 4, img: "img/espelho-lapidado.jpg", tarja: "Acabamento fino", cor: "turquesa", min_mm: 50 },
-  { id: "espelho-sob-medida", nome: "Espelho Sob Medida", preco_m2: 200.00, espessura_mm: 4, img: "img/espelho-sob-medida.jpg", tarja: "Sob medida", cor: "azul", min_mm: 50 },
+  { id: "espelho-comum",  nome: "Espelho Comum",   preco_m2: 130.00, espessura_mm: 4, img: "img/espelho-comum.jpg",  tarja: "Popular",    cor: "verde", min_mm: 50, codigo_catalogo: "EP04" },
+  { id: "espelho-decorativo", nome: "Espelho Decorativo", preco_m2: 220.00, espessura_mm: 4, img: "img/espelho-decorativo.jpg", tarja: "Decorativo", cor: "rosa", min_mm: 50, codigo_catalogo: "EP04B" },
+  { id: "espelho-lapidado", nome: "Espelho Lapidado", preco_m2: 180.00, espessura_mm: 4, img: "img/espelho-lapidado.jpg", tarja: "Acabamento fino", cor: "turquesa", min_mm: 50, codigo_catalogo: "EP04L" },
+  { id: "espelho-sob-medida", nome: "Espelho Sob Medida", preco_m2: 200.00, espessura_mm: 4, img: "img/espelho-sob-medida.jpg", tarja: "Sob medida", cor: "azul", min_mm: 50, codigo_catalogo: null },
   { id: "guarda-corpo",   nome: "Guarda-Corpo",    preco_m2: 340.00, espessura_mm: 10, img: "img/guarda-corpo.jpg", tarja: "Segurança",  cor: "laranja", min_mm: 50 }
 ];
 
