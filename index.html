@@ -946,7 +946,7 @@
 
     <div class="dica-medida">
       <span>📏</span>
-      <span><strong>Altura</strong> é a medida de cima para baixo. <strong>Largura</strong> é a medida de um lado a outro. <em>As medidas devem ser múltiplas de 50mm.</em> O desenho abaixo muda de posição conforme você digita.</span>
+      <span><strong>Altura</strong> é a medida de cima para baixo. <strong>Largura</strong> é a medida de um lado a outro. Digite a medida exata que você precisa — a cobrança arredonda automaticamente pro módulo de corte, mas o vidro é cortado na medida certa que você pediu. O desenho abaixo muda de posição conforme você digita.</span>
     </div>
 
     <div class="desenho-wrap">
@@ -1486,6 +1486,14 @@ function renderVidros() {
     `;
     card.addEventListener("click", () => {
       estado.vidroSelecionado = v;
+      // preenche uma medida padrão pra facilitar — só se o cliente ainda não digitou nada
+      if (!estado.altura && !estado.largura) {
+        const padrao = Math.max(500, v.min_mm);
+        estado.altura = padrao;
+        estado.largura = padrao;
+        document.getElementById("inputAltura").value = padrao;
+        document.getElementById("inputLargura").value = padrao;
+      }
       renderVidros();
       validarMedidas();
       atualizarTudo();
@@ -1578,8 +1586,6 @@ function validarMedidas() {
   if (estado.altura > 0) {
     if (estado.altura < min) {
       estado.erroAltura = `A medida mínima para este vidro é ${min}mm.`;
-    } else if (estado.altura % 50 !== 0) {
-      estado.erroAltura = "A medida deve ser múltipla de 50mm (ex: 500, 550, 600).";
     } else {
       estado.erroAltura = "";
     }
@@ -1602,8 +1608,6 @@ function validarMedidas() {
   if (estado.largura > 0) {
     if (estado.largura < min) {
       estado.erroLargura = `A medida mínima para este vidro é ${min}mm.`;
-    } else if (estado.largura % 50 !== 0) {
-      estado.erroLargura = "A medida deve ser múltipla de 50mm (ex: 500, 550, 600).";
     } else {
       estado.erroLargura = "";
     }
