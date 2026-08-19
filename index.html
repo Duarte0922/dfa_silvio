@@ -706,6 +706,20 @@
   .msg-status.ok { display: block; background: var(--accent-light); color: var(--accent-dark); }
   .msg-status.erro { display: block; background: #FBEAE8; color: var(--danger); }
 
+  /* ===== Forma de entrega (retirada x entrega) ===== */
+  .entrega-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .entrega-card { border: 2px solid var(--border); border-radius: var(--radius); padding: 14px 12px; text-align: center; cursor: pointer; background: var(--bg-card); transition: border-color 0.15s, background 0.15s; }
+  .entrega-card:hover { border-color: var(--accent); }
+  .entrega-card.selected { border-color: var(--accent); background: var(--accent-light); }
+  .entrega-card .icone { font-size: 20px; margin-bottom: 4px; }
+  .entrega-card .nome { font-weight: 700; font-size: 13.5px; }
+  .entrega-card .desc { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .frete-status { font-size: 12.5px; border-radius: 8px; padding: 10px 12px; margin-top: 4px; display: none; }
+  .frete-status.visivel { display: block; }
+  .frete-status.calculando { background: #F2F1EC; color: var(--text-muted); }
+  .frete-status.ok { background: var(--accent-light); color: var(--accent-dark); font-weight: 600; }
+  .frete-status.erro { background: #FBEAE8; color: var(--danger); font-weight: 600; }
+
   /* Modal de Pagamento Pix */
   .modal-overlay {
     position: fixed;
@@ -983,12 +997,29 @@
         <input type="tel" id="inputTelefone" class="campo-texto" placeholder="(31) 90000-0000" inputmode="tel">
       </div>
     </div>
-    <div class="campo">
-      <label for="inputEndereco">Endereço para entrega ou retirada (opcional)</label>
-      <input type="text" id="inputEndereco" class="campo-texto" placeholder="Rua, número, bairro, cidade">
+
+    <label style="display:block;font-size:13px;font-weight:600;margin-bottom:8px;color:var(--text-muted);">Como você quer receber? *</label>
+    <div class="entrega-grid">
+      <div class="entrega-card" id="cardRetirada" data-modo="retirada">
+        <div class="icone">🏠</div>
+        <div class="nome">Retirar na loja</div>
+        <div class="desc">Sem custo</div>
+      </div>
+      <div class="entrega-card" id="cardEntrega" data-modo="entrega">
+        <div class="icone">🚚</div>
+        <div class="nome">Receber em casa</div>
+        <div class="desc">Frete por km rodado</div>
+      </div>
+    </div>
+
+    <div id="blocoEnderecoEntrega" style="display:none;">
+      <div class="campo">
+        <label for="inputEndereco">Endereço completo para entrega *</label>
+        <input type="text" id="inputEndereco" class="campo-texto" placeholder="Rua, número, bairro, cidade">
+      </div>
+      <div class="frete-status" id="freteStatus"></div>
     </div>
   </div>
-
   <!-- ETAPA 5: Forma de pagamento -->
   <div class="step">
     <span class="step-label">Passo 5</span>
@@ -1296,7 +1327,12 @@ const estado = {
   erroLargura: "",
   acessorios: {},
   cliente: { nome: "", telefone: "", endereco: "" },
-  formaPagamento: null
+  formaPagamento: null,
+  formaEntrega: null,
+  entregaKm: 0,
+  entregaValor: 0,
+  entregaErro: "",
+  entregaCalculando: false
 };
 
 const FORMAS_PAGAMENTO = [
@@ -1742,6 +1778,11 @@ function calcularPreco() {
     }
   });
 
+  if (estado.formaEntrega === "entrega" && estado.entregaValor > 0) {
+    total += estado.entregaValor;
+    linhas.push(`Entrega — ${estado.entregaKm.toFixed(1)} km (ida e volta): R$ ${estado.entregaValor.toFixed(2)}`);
+  }
+
   return { total, linhas };
 }
 /* =========================================================
@@ -1767,11 +1808,15 @@ function atualizarTudo() {
   precoTotalGrande.textContent = totalFmt;
   precoTotalBarra.textContent = totalFmt;
 
+  const entregaOk = estado.formaEntrega === "retirada"
+    || (estado.formaEntrega === "entrega" && !estado.entregaErro && !estado.entregaCalculando && estado.entregaValor > 0);
+
   const pedidoValido = estado.vidroSelecionado && estado.altura > 0 && estado.largura > 0
     && !estado.erroAltura && !estado.erroLargura
     && estado.cliente.nome.trim() && estado.cliente.telefone.trim()
-    && estado.formaPagamento;
-    
+    && estado.formaPagamento
+    && estado.formaEntrega && entregaOk;
+
   btnFinalizar.disabled = !pedidoValido;
 }
 
@@ -1798,10 +1843,127 @@ document.getElementById("inputTelefone").addEventListener("input", (e) => {
   atualizarTudo();
 });
 
-document.getElementById("inputEndereco").addEventListener("input", (e) => {
+/* =========================================================
+   FORMA DE ENTREGA (Retirada x Entrega) + FRETE POR ROTA (OSRM)
+   Mesmo método usado no dfa-admin.html (Nova Venda), pra não haver
+   divergência de valor entre o app do cliente e o balcão.
+   ========================================================= */
+const ENDERECO_LOJA = "Rua Mandalay, 120, Guarani, Belo Horizonte, MG";
+const ENTREGA_RAIO_MAX_KM = 50;
+const ENTREGA_PRECO_KM = 4.00;
+
+let lojaCoordsCache = null;
+let freteRequestId = 0;
+let freteDebounceTimer = null;
+
+const cardRetirada = document.getElementById("cardRetirada");
+const cardEntrega = document.getElementById("cardEntrega");
+const blocoEnderecoEntrega = document.getElementById("blocoEnderecoEntrega");
+const inputEndereco = document.getElementById("inputEndereco");
+const freteStatusEl = document.getElementById("freteStatus");
+
+function mostrarStatusFrete(texto, tipo) {
+  freteStatusEl.textContent = texto;
+  freteStatusEl.className = "frete-status visivel " + tipo;
+}
+
+function selecionarFormaEntrega(modo) {
+  estado.formaEntrega = modo;
+  cardRetirada.classList.toggle("selected", modo === "retirada");
+  cardEntrega.classList.toggle("selected", modo === "entrega");
+
+  if (modo === "retirada") {
+    blocoEnderecoEntrega.style.display = "none";
+    estado.entregaKm = 0;
+    estado.entregaValor = 0;
+    estado.entregaErro = "";
+    estado.entregaCalculando = false;
+    estado.cliente.endereco = "";
+  } else {
+    blocoEnderecoEntrega.style.display = "block";
+    if (inputEndereco.value.trim().length > 8) calcularFrete();
+  }
+  atualizarTudo();
+}
+
+cardRetirada.addEventListener("click", () => selecionarFormaEntrega("retirada"));
+cardEntrega.addEventListener("click", () => selecionarFormaEntrega("entrega"));
+
+inputEndereco.addEventListener("input", (e) => {
   estado.cliente.endereco = e.target.value;
+  estado.entregaValor = 0;
+  estado.entregaKm = 0;
+  estado.entregaErro = "";
+  clearTimeout(freteDebounceTimer);
+  if (e.target.value.trim().length > 8) {
+    freteDebounceTimer = setTimeout(calcularFrete, 900);
+  } else {
+    freteStatusEl.classList.remove("visivel");
+    atualizarTudo();
+  }
 });
 
+// Geocodificação (Nominatim) + rota real (OSRM) — mesmas funções do admin.
+async function geocodificar(endereco) {
+  const url = "https://nominatim.openstreetmap.org/search?format=json&limit=1&q=" + encodeURIComponent(endereco);
+  const resp = await fetch(url, { headers: { "Accept-Language": "pt-BR" } });
+  if (!resp.ok) throw new Error("Falha ao consultar geocodificação");
+  const dados = await resp.json();
+  if (!dados.length) throw new Error("Endereço não encontrado");
+  return { lat: parseFloat(dados[0].lat), lon: parseFloat(dados[0].lon) };
+}
+
+async function calcularDistanciaRotaKm(origem, destino) {
+  const url = `https://router.project-osrm.org/route/v1/driving/${origem.lon},${origem.lat};${destino.lon},${destino.lat}?overview=false`;
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error("Falha ao calcular rota");
+  const dados = await resp.json();
+  if (!dados.routes || !dados.routes.length) throw new Error("Não foi possível traçar rota entre os endereços");
+  return dados.routes[0].distance / 1000;
+}
+
+async function calcularFrete() {
+  const endereco = inputEndereco.value.trim();
+  if (endereco.length < 8) return;
+
+  const meuRequestId = ++freteRequestId;
+  estado.entregaCalculando = true;
+  estado.entregaErro = "";
+  mostrarStatusFrete("📍 Calculando a distância até você...", "calculando");
+  atualizarTudo();
+
+  try {
+    if (!lojaCoordsCache) lojaCoordsCache = await geocodificar(ENDERECO_LOJA);
+    const destino = await geocodificar(endereco);
+    const km = await calcularDistanciaRotaKm(lojaCoordsCache, destino);
+    if (meuRequestId !== freteRequestId) return;
+
+    if (km > ENTREGA_RAIO_MAX_KM) {
+      estado.entregaErro = `Esse endereço está a ${km.toFixed(1)} km da loja, fora da nossa área de entrega (até ${ENTREGA_RAIO_MAX_KM} km). Fale com a gente pra ver alternativas.`;
+      estado.entregaKm = km;
+      estado.entregaValor = 0;
+      mostrarStatusFrete("⚠️ " + estado.entregaErro, "erro");
+    } else {
+      const valor = km * 2 * ENTREGA_PRECO_KM;
+      estado.entregaKm = km;
+      estado.entregaValor = valor;
+      estado.entregaErro = "";
+      mostrarStatusFrete(`🚚 Distância até você: ${km.toFixed(1)} km · Frete (ida e volta): R$ ${valor.toFixed(2)}`, "ok");
+    }
+  } catch (err) {
+    if (meuRequestId !== freteRequestId) return;
+    estado.entregaErro = err.message || "Não foi possível calcular o frete agora.";
+    estado.entregaKm = 0;
+    estado.entregaValor = 0;
+    mostrarStatusFrete("⚠️ " + estado.entregaErro, "erro");
+    console.error(err);
+  } finally {
+    if (meuRequestId === freteRequestId) {
+      estado.entregaCalculando = false;
+      atualizarTudo();
+    }
+  }
+}
 /* =========================================================
    GERADOR DE PAYLOAD PIX (EMV QRCPS) + CRC16
    ========================================================= */
@@ -1913,25 +2075,26 @@ async function finalizarPedido() {
   const agora = new Date().toISOString();
   const pedidoId = "PED-" + Date.now().toString(36).toUpperCase();
 
+  const subtotalSemFrete = total - (estado.formaEntrega === "entrega" ? estado.entregaValor : 0);
   const pedido = {
     id: pedidoId,
     date: agora,
     name: estado.cliente.nome.trim(),
     phone: estado.cliente.telefone.trim(),
-    addr: estado.cliente.endereco.trim(),
+    addr: estado.formaEntrega === "entrega" ? estado.cliente.endereco.trim() : "",
     doc: "", email: "", cep: "", num: "", bairro: "", city: "",
     complemento: "", reference: "", pref_date: "",
     obs: "",
-    delivery: estado.cliente.endereco.trim() ? "entrega" : "retirada",
+    delivery: estado.formaEntrega === "entrega" ? "entrega" : "retirada",
+    deliveryKm: estado.formaEntrega === "entrega" ? estado.entregaKm : 0,
     payment: estado.formaPagamento,
-    items: [montarItemVidro(total), ...montarItensAcessorios()],
-    totals: { subtotal: total, volumeDiscount: 0, delivery: 0, total: total },
+    items: [montarItemVidro(subtotalSemFrete), ...montarItensAcessorios()],
+    totals: { subtotal: subtotalSemFrete, volumeDiscount: 0, delivery: estado.formaEntrega === "entrega" ? estado.entregaValor : 0, total: total },
     status: "recebido",
     statusHistory: [{ status: "recebido", at: agora }],
     isPro: false,
     customerId: ""
   };
-
   try {
     await db.ref("pedidos/" + pedido.id).set(pedido);
 
