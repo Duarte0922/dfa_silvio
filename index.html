@@ -751,6 +751,19 @@
     position: absolute; top: 14px; right: 14px; width: 30px; height: 30px; border-radius: 50%;
     border: none; background: var(--bg); font-size: 14px; cursor: pointer; color: var(--text-muted);
   }
+  .mp-preview-wrap { display: flex; justify-content: center; padding: 14px 0 4px; }
+  .mp-preview-canvas { position: relative; width: 220px; height: 180px; display: flex; align-items: center; justify-content: center; }
+  .mp-preview-box {
+    position: relative; overflow: hidden; border: 2px solid var(--accent);
+    border-radius: 4px; background: #EFEFEA;
+    transition: width .25s ease, height .25s ease; box-shadow: var(--shadow);
+  }
+  .mp-preview-box img {
+    position: absolute; top: 50%; left: 50%; width: 220px; height: 180px;
+    max-width: none; transform: translate(-50%,-50%); object-fit: cover;
+  }
+  .mp-preview-legenda { text-align: center; font-size: 11.5px; color: var(--text-muted); margin-top: 6px; }
+
   .modal-produto-preco-preview {
     background: var(--accent-light); border-radius: 8px; padding: 12px 14px; margin-top: 14px;
     display: flex; justify-content: space-between; align-items: center;
@@ -767,6 +780,52 @@
   .carrinho-item-linha .info .medida { color: var(--text-muted); font-size: 11.5px; }
   .carrinho-item-linha .subtotal { font-weight: 700; color: var(--accent-dark); font-size: 13px; }
   .carrinho-item-linha .rm-item { background: none; border: none; color: var(--danger); font-size: 15px; cursor: pointer; margin-left: 8px; }
+
+  /* ===== Painel do carrinho (checkout) ===== */
+  #painelCarrinhoOverlay {
+    display: none; position: fixed; inset: 0; background: var(--bg);
+    z-index: 80; overflow-y: auto;
+  }
+  #painelCarrinhoOverlay.aberto { display: block; }
+  .painel-carrinho-topo {
+    position: sticky; top: 0; background: var(--bg-card); border-bottom: 1px solid var(--border);
+    padding: 14px 16px; display: flex; align-items: center; gap: 12px; z-index: 2;
+  }
+  .painel-carrinho-topo h2 { margin: 0; font-size: 17px; flex: 1; }
+  .btn-fechar-carrinho { background: none; border: 1px solid var(--border); border-radius: 8px; width: 34px; height: 34px; font-size: 15px; cursor: pointer; color: var(--text-muted); }
+  #painelCarrinhoOverlay main { padding-bottom: 100px; }
+
+  .carrinho-lista-item { display: flex; gap: 12px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; margin-bottom: 10px; align-items: center; }
+  .carrinho-lista-item img { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; background: #EFEFEA; flex-shrink: 0; }
+  .carrinho-lista-item .info { flex: 1; }
+  .carrinho-lista-item .info .nome { font-weight: 700; font-size: 13.5px; }
+  .carrinho-lista-item .info .medida { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .carrinho-lista-item .info .subtotal { font-weight: 700; color: var(--accent-dark); font-size: 13.5px; margin-top: 4px; }
+  .carrinho-lista-acoes { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+  .carrinho-lista-qtd { display: flex; align-items: center; gap: 6px; }
+  .carrinho-lista-qtd button { width: 24px; height: 24px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); font-size: 13px; cursor: pointer; }
+  .carrinho-lista-qtd span { min-width: 16px; text-align: center; font-size: 13px; font-weight: 600; }
+  .carrinho-lista-rm { background: none; border: none; color: var(--danger); font-size: 13px; cursor: pointer; text-decoration: underline; }
+  .carrinho-vazio-msg { text-align: center; color: var(--text-muted); padding: 40px 20px; font-size: 13.5px; }
+  .btn-continuar-carrinho { width: 100%; background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 13px; font-size: 14.5px; font-weight: 700; cursor: pointer; margin-top: 6px; }
+  .btn-continuar-carrinho:hover { background: var(--accent-dark); }
+  .btn-continuar-carrinho:disabled { background: #C9C6BE; cursor: not-allowed; }
+  .link-voltar-carrinho { font-size: 12.5px; color: var(--text-muted); text-decoration: underline; cursor: pointer; background: none; border: none; padding: 0; margin-bottom: 14px; }
+
+  /* ===== Grade agrupada por categoria+acabamento (catálogo real) ===== */
+  .grade-linha { margin-bottom: 22px; }
+  .grade-linha-titulo { font-weight: 700; font-size: 14px; margin-bottom: 8px; }
+  .grade-track { display: flex; gap: 10px; overflow-x: auto; scroll-behavior: smooth; scroll-snap-type: x mandatory; padding-bottom: 6px; -ms-overflow-style: none; scrollbar-width: none; }
+  .grade-track::-webkit-scrollbar { display: none; }
+  .grade-card { flex: 0 0 auto; width: 130px; scroll-snap-align: start; border: 1.5px solid var(--border); border-radius: var(--radius); background: var(--bg-card); overflow: hidden; cursor: pointer; transition: border-color .15s, transform .15s; }
+  .grade-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .grade-card img { width: 100%; height: 80px; object-fit: cover; background: #EFEFEA; display: block; }
+  .grade-card .info { padding: 8px 9px 10px; }
+  .grade-card .esp { font-size: 11px; color: var(--text-muted); }
+  .grade-card .preco { font-size: 13px; font-weight: 800; color: var(--accent-dark); margin-top: 2px; }
+
+  .grupo-produtos { margin-bottom: 26px; }
+  .grupo-titulo { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 10px; padding-left: 8px; border-left: 4px solid var(--accent); }
 
   /* Modal de Pagamento Pix */
   .modal-overlay {
@@ -975,7 +1034,12 @@
       <span>Quer um modelo diferente ou mudar algo na imagem? Tire suas dúvidas, chama a gente no WhatsApp! <a id="linkWhatsappBanner" href="#" target="_blank" rel="noopener">Clique aqui</a>, teremos o prazer de te atender.</span>
     </div>
 
-    <div class="vidro-grid" id="vidroGrid"></div>
+      <div class="vidro-grid" id="vidroGrid"></div>
+
+    <div style="margin-top:22px;padding-top:18px;border-top:1px dashed var(--border);">
+      <div style="font-weight:700;font-size:15px;margin-bottom:12px;">Catálogo completo (por tipo e acabamento)</div>
+      <div id="gradeCatalogoWrap"></div>
+    </div>
     <button type="button" class="btn-abrir-espelhos" id="btnAbrirEspelhos">🪞 Ver modelos de Espelho</button>
 
     <div class="recom-bloco">
@@ -1035,6 +1099,27 @@
     <h2>Acessórios (opcional)</h2>
     <div id="acessoriosList"></div>
   </div>
+
+</main>
+
+<div id="painelCarrinhoOverlay">
+  <div class="painel-carrinho-topo">
+    <h2>🛒 Seu carrinho</h2>
+    <button class="btn-fechar-carrinho" id="btnFecharCarrinho">✕</button>
+  </div>
+  <main>
+
+  <!-- SUB-TELA 1: lista de itens -->
+  <div id="carrinhoEtapaLista">
+    <div id="carrinhoListaItens"></div>
+    <button class="btn-continuar-carrinho" id="btnContinuarCarrinho" disabled>Continuar</button>
+  </div>
+
+  <!-- SUB-TELA 2: cadastro + entrega + pagamento -->
+  <div id="carrinhoEtapaCheckout" style="display:none;">
+  <button class="link-voltar-carrinho" id="btnVoltarListaCarrinho">← Voltar pro carrinho</button>
+
+  <!-- ETAPA 4: Dados do cliente -->
 
   <!-- ETAPA 4: Dados do cliente -->
   <div class="step">
@@ -1099,7 +1184,7 @@
 
 </main>
 
-<div class="barra-fixa">
+<div class="barra-fixa" id="barraFixaCheckout">
   <div class="barra-fixa-inner">
     <div class="barra-total">
       <div class="label">Total</div>
@@ -1109,7 +1194,15 @@
   </div>
 </div>
 
-</div><!-- fim #appConteudo -->
+  </div>
+  <!-- fim carrinhoEtapaCheckout -->
+
+  </main>
+</div>
+<!-- fim painelCarrinhoOverlay -->
+
+</div>
+<!-- fim tela fazerPedido -->
 
 <div class="modal-overlay" id="modalImagemVidro">
   <div class="modal-imagem-content">
@@ -1151,9 +1244,14 @@
       </div>
     </div>
 
-    <div class="desenho-wrap">
-      <svg id="mpDesenho" width="240" height="180" viewBox="0 0 240 180"></svg>
+    <div class="mp-preview-wrap">
+      <div class="mp-preview-canvas">
+        <div class="mp-preview-box" id="mpPreviewBox" style="width:40px;height:40px;">
+          <img id="mpPreviewImg" src="" alt="Prévia do vidro">
+        </div>
+      </div>
     </div>
+    <div class="mp-preview-legenda" id="mpPreviewLegenda">Digite a medida pra ver a prévia</div>
 
     <div class="modal-produto-preco-preview">
       <span>Subtotal deste item</span>
@@ -1288,6 +1386,7 @@ function atualizarListaVidros() {
   }
   estado.vidroSelecionado = null;
   if (typeof renderVidros === "function") renderVidros();
+  if (typeof renderGradeCatalogoAgrupado === "function") renderGradeCatalogoAgrupado();
   if (typeof renderRecomendados === "function") renderRecomendados();
   if (typeof validarMedidas === "function") validarMedidas();
   if (typeof atualizarTudo === "function") atualizarTudo();
@@ -1313,6 +1412,7 @@ Promise.all([
     `https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent("Olá! Sou profissional e preciso do código de acesso ao app DFA Vidros.")}`;
 
   atualizarListaVidros();
+  renderGradeCatalogoAgrupado();
 
   // já logado neste aparelho?
   const telSalvo = localStorage.getItem(CHAVE_STORAGE_TEL);
@@ -1552,6 +1652,74 @@ document.getElementById("btnTrocarProduto").addEventListener("click", () => {
 document.getElementById("setaEsquerda").addEventListener("click", () => carrosselTrack.scrollBy({ left: -430, behavior: "smooth" }));
 document.getElementById("setaDireita").addEventListener("click", () => carrosselTrack.scrollBy({ left: 430, behavior: "smooth" }));
 
+function renderGradeCatalogoAgrupado() {
+  const wrap = document.getElementById("gradeCatalogoWrap");
+  if (!wrap) return;
+
+  function descricaoBase(descricao) {
+    let base = descricao || "";
+    base = base.replace(/\d+\s*mm/gi, "");
+    base = base.replace(/cortad[oa]|lapidad[oa]|bisotad[oa]/gi, "");
+    return base.replace(/\s+/g, " ").trim();
+  }
+
+  const grupos = {};
+  Object.values(catalogoFirebase).forEach(item => {
+    const base = descricaoBase(item.descricao);
+    const key = item.categoria + "|" + item.acabamento + "|" + base;
+    if (!grupos[key]) grupos[key] = [];
+    grupos[key].push(item);
+  });
+
+  const chaves = Object.keys(grupos).sort();
+  if (!chaves.length) {
+    wrap.innerHTML = `<div style="color:var(--text-muted);font-size:13px;">Catálogo ainda não tem itens cadastrados no admin.</div>`;
+    return;
+  }
+
+  wrap.innerHTML = chaves.map(key => {
+    const itens = grupos[key].slice().sort((a, b) => (a.espessura_mm || 0) - (b.espessura_mm || 0));
+    const [cat, acab, base] = key.split("|");
+    const titulo = base ? `${base} — ${rotuloAcabamentoApp(acab)}` : `${categoriaLabel(cat)} ${rotuloAcabamentoApp(acab)}`;
+
+    const cardsHtml = itens.map(item => {
+      const preco = (modoAtual === "profissional" && item.preco_profissional != null && item.preco_profissional !== "")
+        ? item.preco_profissional : item.preco_consumidor;
+      const img = item.imagem || "img/vidro-comum.jpg";
+      const fallbackImg = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='110'%3E%3Crect width='160' height='110' fill='%23EFEFEA'/%3E%3C/svg%3E`;
+      return `<div class="grade-card" data-catid="${item.id}">
+        <img src="${img}" alt="${item.descricao}" onerror="this.src='${fallbackImg}'">
+        <div class="info">
+          <div class="esp">${item.espessura_mm}mm</div>
+          <div class="preco">R$ ${(preco || 0).toFixed(2)}/m²</div>
+        </div>
+      </div>`;
+    }).join("");
+
+    return `<div class="grupo-produtos">
+      <div class="grupo-titulo">${titulo}</div>
+      <div class="grade-track">${cardsHtml}</div>
+    </div>`;
+  }).join("");
+
+  wrap.querySelectorAll(".grade-card").forEach(card => {
+    card.addEventListener("click", () => {
+      const item = catalogoFirebase[card.dataset.catid];
+      if (!item) return;
+      const preco = (modoAtual === "profissional" && item.preco_profissional != null && item.preco_profissional !== "")
+        ? item.preco_profissional : item.preco_consumidor;
+      abrirModalProduto({
+        id: "cat_" + item.id,
+        nome: item.descricao,
+        preco_m2: preco || 0,
+        espessura_mm: item.espessura_mm,
+        img: item.imagem || "img/vidro-comum.jpg",
+        min_mm: item.codigo === "AR" ? 250 : 50
+      });
+    });
+  });
+}
+
 renderCarrossel();
 
 document.getElementById("linkWhatsapp").href = "https://wa.me/" + WHATSAPP_NUMERO;
@@ -1606,7 +1774,6 @@ renderRecomendados();
    página toda)
    ========================================================= */
 const modalProdutoEl = document.getElementById("modalProduto");
-const mpDesenhoEl = document.getElementById("mpDesenho");
 
 function abrirModalProduto(produto) {
   modalProdutoEstado.produto = produto;
@@ -1636,21 +1803,27 @@ function fecharModalProduto() {
 document.getElementById("btnFecharModalProduto").addEventListener("click", fecharModalProduto);
 modalProdutoEl.addEventListener("click", (e) => { if (e.target === modalProdutoEl) fecharModalProduto(); });
 
+const MP_PREVIEW_MAX_W = 220, MP_PREVIEW_MAX_H = 180, MP_PREVIEW_MIN = 40;
+
 function desenharMiniVidro(alturaMm, larguraMm) {
-  const W = 240, H = 180, PAD = 26;
-  mpDesenhoEl.innerHTML = "";
+  const box = document.getElementById("mpPreviewBox");
+  const img = document.getElementById("mpPreviewImg");
+  const legenda = document.getElementById("mpPreviewLegenda");
+
+  img.src = modalProdutoEstado.produto ? modalProdutoEstado.produto.img : "";
+
   if (!alturaMm || !larguraMm) {
-    mpDesenhoEl.innerHTML = `<text x="${W/2}" y="${H/2}" text-anchor="middle" font-size="12" fill="#B5B2AA">Digite altura e largura</text>`;
+    box.style.width = MP_PREVIEW_MIN + "px";
+    box.style.height = MP_PREVIEW_MIN + "px";
+    legenda.textContent = "Digite a medida pra ver a prévia crescer";
     return;
   }
-  const escala = Math.min((W - PAD*2) / larguraMm, (H - PAD*2) / alturaMm);
-  const wPx = larguraMm * escala, hPx = alturaMm * escala;
-  const x = (W - wPx) / 2, y = (H - hPx) / 2;
-  mpDesenhoEl.innerHTML = `
-    <rect x="${x}" y="${y}" width="${wPx}" height="${hPx}" fill="#E9F3E8" stroke="#4C8C4A" stroke-width="2" rx="3" />
-    <text x="${x + wPx/2}" y="${y - 8}" text-anchor="middle" font-size="11" fill="#6B6B63">${larguraMm} mm</text>
-    <text x="${x - 10}" y="${y + hPx/2}" text-anchor="end" font-size="11" fill="#6B6B63">${alturaMm}</text>
-  `;
+  const escala = Math.min(MP_PREVIEW_MAX_W / larguraMm, MP_PREVIEW_MAX_H / alturaMm);
+  const wPx = Math.max(MP_PREVIEW_MIN, larguraMm * escala);
+  const hPx = Math.max(MP_PREVIEW_MIN, alturaMm * escala);
+  box.style.width = wPx + "px";
+  box.style.height = hPx + "px";
+  legenda.textContent = `${modalProdutoEstado.produto.nome} — ${larguraMm} x ${alturaMm} mm`;
 }
 
 function validarModalMedidas() {
@@ -1730,9 +1903,76 @@ function renderCarrinhoBadge() {
 }
 
 document.getElementById("btnAbrirCarrinho").addEventListener("click", () => {
-  document.querySelector(".step:has(#resumoLinhas)")?.scrollIntoView({ behavior: "smooth", block: "start" })
-    || document.getElementById("resumoLinhas").scrollIntoView({ behavior: "smooth", block: "start" });
+  document.getElementById("painelCarrinhoOverlay").classList.add("aberto");
+  irParaEtapaLista();
 });
+document.getElementById("btnFecharCarrinho").addEventListener("click", () => {
+  document.getElementById("painelCarrinhoOverlay").classList.remove("aberto");
+});
+
+function irParaEtapaLista() {
+  document.getElementById("carrinhoEtapaLista").style.display = "block";
+  document.getElementById("carrinhoEtapaCheckout").style.display = "none";
+  document.getElementById("barraFixaCheckout").style.display = "none";
+  renderListaCarrinho();
+}
+function irParaEtapaCheckout() {
+  document.getElementById("carrinhoEtapaLista").style.display = "none";
+  document.getElementById("carrinhoEtapaCheckout").style.display = "block";
+  document.getElementById("barraFixaCheckout").style.display = "block";
+}
+
+document.getElementById("btnVoltarListaCarrinho").addEventListener("click", irParaEtapaLista);
+document.getElementById("btnContinuarCarrinho").addEventListener("click", irParaEtapaCheckout);
+
+function renderListaCarrinho() {
+  const el = document.getElementById("carrinhoListaItens");
+  const btnContinuar = document.getElementById("btnContinuarCarrinho");
+
+  if (!estado.carrinho.length) {
+    el.innerHTML = `<div class="carrinho-vazio-msg">Seu carrinho está vazio.<br>Escolha um vidro pra começar.</div>`;
+    btnContinuar.disabled = true;
+    return;
+  }
+  btnContinuar.disabled = false;
+
+  el.innerHTML = estado.carrinho.map(it => `
+    <div class="carrinho-lista-item">
+      <img src="${it.img || ''}" alt="${it.productName}" onerror="this.style.background='#EFEFEA'; this.src='';">
+      <div class="info">
+        <div class="nome">${it.productName}</div>
+        <div class="medida">${it.config.width}mm × ${it.config.height}mm · ${it.config.thickness}mm</div>
+        <div class="subtotal">R$ ${it.subtotal.toFixed(2)}</div>
+      </div>
+      <div class="carrinho-lista-acoes">
+        <div class="carrinho-lista-qtd">
+          <button data-acao="menos" data-id="${it.id}">−</button>
+          <span>${it.qty}</span>
+          <button data-acao="mais" data-id="${it.id}">+</button>
+        </div>
+        <button class="carrinho-lista-rm" data-rm="${it.id}">Remover</button>
+      </div>
+    </div>`).join("");
+
+  el.querySelectorAll("[data-acao]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const item = estado.carrinho.find(i => i.id === btn.dataset.id);
+      if (!item) return;
+      if (btn.dataset.acao === "mais") item.qty += 1;
+      else item.qty = Math.max(1, item.qty - 1);
+      item.subtotal = item.area_m2 * (item.subtotal / (item.qty === 0 ? 1 : item.qty)); // recalculado abaixo com precoUnit
+      renderListaCarrinho();
+      renderCarrinhoBadge();
+      atualizarTudo();
+    });
+  });
+  el.querySelectorAll("[data-rm]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      removerDoCarrinho(btn.dataset.rm);
+      renderListaCarrinho();
+    });
+  });
+}
 
 function removerDoCarrinho(id) {
   estado.carrinho = estado.carrinho.filter(it => it.id !== id);
