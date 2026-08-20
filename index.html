@@ -723,6 +723,7 @@
   /* ===== Badge do carrinho ===== */
   .carrinho-badge {
     position: fixed; top: 14px; right: 14px; z-index: 30;
+    transition: transform .15s ease;
     background: var(--accent); color: #fff; border: none; border-radius: 30px;
     padding: 10px 16px; font-weight: 700; font-size: 13.5px; cursor: pointer;
     box-shadow: var(--shadow); display: flex; align-items: center; gap: 6px;
@@ -795,7 +796,11 @@
   .btn-fechar-carrinho { background: none; border: 1px solid var(--border); border-radius: 8px; width: 34px; height: 34px; font-size: 15px; cursor: pointer; color: var(--text-muted); }
   #painelCarrinhoOverlay main { padding-bottom: 100px; }
 
-  .carrinho-lista-item { display: flex; gap: 12px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; margin-bottom: 10px; align-items: center; }
+    .carrinho-lista-item { display: flex; gap: 12px; background: var(--bg-card); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 12px; margin-bottom: 10px; align-items: center; transition: border-color .15s, opacity .15s; }
+  .carrinho-lista-item.nao-selecionado { opacity: 0.55; }
+  .carrinho-lista-item.selecionado { border-color: var(--accent); }
+  .carrinho-lista-check { flex-shrink: 0; }
+  .carrinho-lista-check input { width: 20px; height: 20px; accent-color: var(--accent); cursor: pointer; }
   .carrinho-lista-item img { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; background: #EFEFEA; flex-shrink: 0; }
   .carrinho-lista-item .info { flex: 1; }
   .carrinho-lista-item .info .nome { font-weight: 700; font-size: 13.5px; }
@@ -807,6 +812,7 @@
   .carrinho-lista-qtd span { min-width: 16px; text-align: center; font-size: 13px; font-weight: 600; }
   .carrinho-lista-rm { background: none; border: none; color: var(--danger); font-size: 13px; cursor: pointer; text-decoration: underline; }
   .carrinho-vazio-msg { text-align: center; color: var(--text-muted); padding: 40px 20px; font-size: 13.5px; }
+  .carrinho-lista-sep { font-size: 12.5px; font-weight: 700; color: var(--text-muted); margin: 16px 0 8px; text-transform: uppercase; letter-spacing: .03em; }
   .btn-continuar-carrinho { width: 100%; background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 13px; font-size: 14.5px; font-weight: 700; cursor: pointer; margin-top: 6px; }
   .btn-continuar-carrinho:hover { background: var(--accent-dark); }
   .btn-continuar-carrinho:disabled { background: #C9C6BE; cursor: not-allowed; }
@@ -1234,12 +1240,12 @@
     <div class="medidas-row">
       <div class="campo">
         <label for="mpAltura">Altura (mm) *</label>
-        <input type="number" id="mpAltura" placeholder="Ex: 800" min="0" step="50" inputmode="numeric">
+        <input type="number" id="mpAltura" placeholder="Ex: 800" min="0" step="1" inputmode="numeric">
         <div id="mpAvisoAltura" class="aviso-medida"></div>
       </div>
       <div class="campo">
         <label for="mpLargura">Largura (mm) *</label>
-        <input type="number" id="mpLargura" placeholder="Ex: 500" min="0" step="50" inputmode="numeric">
+        <input type="number" id="mpLargura" placeholder="Ex: 500" min="0" step="1" inputmode="numeric">
         <div id="mpAvisoLargura" class="aviso-medida"></div>
       </div>
     </div>
@@ -1257,6 +1263,7 @@
       <span>Subtotal deste item</span>
       <span class="valor" id="mpSubtotalPreview">R$ 0,00</span>
     </div>
+    <div id="mpAvisoCobranca" style="font-size:11px;color:var(--text-muted);margin-top:6px;text-align:center;"></div>
 
     <button class="btn-add-carrinho" id="btnAddCarrinho" disabled>+ Adicionar ao carrinho</button>
   </div>
@@ -1803,6 +1810,15 @@ function fecharModalProduto() {
 document.getElementById("btnFecharModalProduto").addEventListener("click", fecharModalProduto);
 modalProdutoEl.addEventListener("click", (e) => { if (e.target === modalProdutoEl) fecharModalProduto(); });
 
+// Medida de corte (real, pedida pelo cliente) é sempre preservada e exibida.
+// Medida de cobrança arredonda para cima em módulos de 2x o min_mm do vidro
+// (mesma regra usada no dfa-admin.html) — cobra a chapa inteira gasta, não
+// a medida exata pedida.
+function medidaCobranca(mm, minMm) {
+  const modulo = minMm * 2;
+  return Math.ceil(mm / modulo) * modulo;
+}
+
 const MP_PREVIEW_MAX_W = 220, MP_PREVIEW_MAX_H = 180, MP_PREVIEW_MIN = 40;
 
 function desenharMiniVidro(alturaMm, larguraMm) {
@@ -1831,19 +1847,20 @@ function validarModalMedidas() {
   const elA = document.getElementById("mpAltura"), avA = document.getElementById("mpAvisoAltura");
   const elL = document.getElementById("mpLargura"), avL = document.getElementById("mpAvisoLargura");
 
+  // A medida digitada é sempre a medida real de corte — sem exigir múltiplo
+  // de 50mm. O arredondamento (se houver) entra só no cálculo de cobrança,
+  // nunca bloqueia o que o cliente pode digitar.
   modalProdutoEstado.erroAltura = "";
-  if (modalProdutoEstado.altura > 0) {
-    if (modalProdutoEstado.altura < min) modalProdutoEstado.erroAltura = `Mínimo ${min}mm.`;
-    else if (modalProdutoEstado.altura % 50 !== 0) modalProdutoEstado.erroAltura = "Deve ser múltiplo de 50mm.";
+  if (modalProdutoEstado.altura > 0 && modalProdutoEstado.altura < min) {
+    modalProdutoEstado.erroAltura = `Mínimo ${min}mm.`;
   }
   elA.classList.toggle("erro", !!modalProdutoEstado.erroAltura);
   avA.textContent = modalProdutoEstado.erroAltura ? "⚠️ " + modalProdutoEstado.erroAltura : "";
   avA.classList.toggle("visivel", !!modalProdutoEstado.erroAltura);
 
   modalProdutoEstado.erroLargura = "";
-  if (modalProdutoEstado.largura > 0) {
-    if (modalProdutoEstado.largura < min) modalProdutoEstado.erroLargura = `Mínimo ${min}mm.`;
-    else if (modalProdutoEstado.largura % 50 !== 0) modalProdutoEstado.erroLargura = "Deve ser múltiplo de 50mm.";
+  if (modalProdutoEstado.largura > 0 && modalProdutoEstado.largura < min) {
+    modalProdutoEstado.erroLargura = `Mínimo ${min}mm.`;
   }
   elL.classList.toggle("erro", !!modalProdutoEstado.erroLargura);
   avL.textContent = modalProdutoEstado.erroLargura ? "⚠️ " + modalProdutoEstado.erroLargura : "";
@@ -1859,11 +1876,28 @@ function atualizarModalProduto() {
 
   let subtotal = 0;
   if (valido) {
-    const areaM2 = (modalProdutoEstado.altura / 1000) * (modalProdutoEstado.largura / 1000);
-    subtotal = areaM2 * modalProdutoEstado.produto.preco_m2;
+    const minMm = modalProdutoEstado.produto.min_mm;
+    const alturaCobranca = medidaCobranca(modalProdutoEstado.altura, minMm);
+    const larguraCobranca = medidaCobranca(modalProdutoEstado.largura, minMm);
+    const areaM2Cobranca = (alturaCobranca / 1000) * (larguraCobranca / 1000);
+    subtotal = areaM2Cobranca * modalProdutoEstado.produto.preco_m2;
   }
   document.getElementById("mpSubtotalPreview").textContent = "R$ " + subtotal.toFixed(2).replace(".", ",");
   document.getElementById("btnAddCarrinho").disabled = !valido;
+
+  const avisoCobranca = document.getElementById("mpAvisoCobranca");
+  if (valido) {
+    const minMm = modalProdutoEstado.produto.min_mm;
+    const ac = medidaCobranca(modalProdutoEstado.altura, minMm);
+    const lc = medidaCobranca(modalProdutoEstado.largura, minMm);
+    if (ac !== modalProdutoEstado.altura || lc !== modalProdutoEstado.largura) {
+      avisoCobranca.textContent = `Corte na medida exata (${modalProdutoEstado.largura}×${modalProdutoEstado.altura}mm) — cobrança calculada como ${lc}×${ac}mm`;
+    } else {
+      avisoCobranca.textContent = "";
+    }
+  } else {
+    avisoCobranca.textContent = "";
+  }
 }
 
 document.getElementById("mpAltura").addEventListener("input", (e) => {
@@ -1877,18 +1911,29 @@ document.getElementById("mpLargura").addEventListener("input", (e) => {
 
 document.getElementById("btnAddCarrinho").addEventListener("click", () => {
   const p = modalProdutoEstado.produto;
-  const areaM2 = (modalProdutoEstado.altura / 1000) * (modalProdutoEstado.largura / 1000);
+  const minMm = p.min_mm;
+  const alturaCobranca = medidaCobranca(modalProdutoEstado.altura, minMm);
+  const larguraCobranca = medidaCobranca(modalProdutoEstado.largura, minMm);
+  const areaM2Cobranca = (alturaCobranca / 1000) * (larguraCobranca / 1000);
+
   estado.carrinho.push({
     id: "ci_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
     productId: p.id,
     productName: p.nome,
     productType: "glass",
     img: p.img,
-    config: { width: modalProdutoEstado.largura, height: modalProdutoEstado.altura, thickness: p.espessura_mm, color: "incolor", finish: "", cuts: 0, holes: 0 },
+    config: {
+      width: modalProdutoEstado.largura,   // medida de CORTE real — não arredondar, é o que o cliente pediu
+      height: modalProdutoEstado.altura,   // medida de CORTE real — não arredondar
+      billedWidth: larguraCobranca,        // medida usada na cobrança
+      billedHeight: alturaCobranca,        // medida usada na cobrança
+      thickness: p.espessura_mm, color: "incolor", finish: "", cuts: 0, holes: 0
+    },
     unit: "m2",
     qty: 1,
-    area_m2: areaM2,
-    subtotal: areaM2 * p.preco_m2
+    area_m2: areaM2Cobranca,
+    subtotal: areaM2Cobranca * p.preco_m2,
+    selecionado: true
   });
   fecharModalProduto();
   renderCarrinhoBadge();
@@ -1899,7 +1944,15 @@ document.getElementById("btnAddCarrinho").addEventListener("click", () => {
    CARRINHO — badge, lista no resumo e remoção
    ========================================================= */
 function renderCarrinhoBadge() {
-  document.getElementById("carrinhoQtd").textContent = estado.carrinho.length;
+  const qtdAcessorios = Object.values(estado.acessorios).reduce((s, q) => s + (q || 0), 0);
+  const total = estado.carrinho.length + qtdAcessorios;
+  const badgeEl = document.getElementById("carrinhoQtd");
+  badgeEl.textContent = total;
+
+  // pequeno feedback visual (pulso) pra confirmar que a ação registrou
+  const badge = document.getElementById("btnAbrirCarrinho");
+  badge.style.transform = "scale(1.15)";
+  setTimeout(() => { badge.style.transform = "scale(1)"; }, 150);
 }
 
 document.getElementById("btnAbrirCarrinho").addEventListener("click", () => {
@@ -1929,15 +1982,20 @@ function renderListaCarrinho() {
   const el = document.getElementById("carrinhoListaItens");
   const btnContinuar = document.getElementById("btnContinuarCarrinho");
 
-  if (!estado.carrinho.length) {
+  const acessoriosComQtd = ACESSORIOS.filter(a => (estado.acessorios[a.id] || 0) > 0);
+
+  if (!estado.carrinho.length && !acessoriosComQtd.length) {
     el.innerHTML = `<div class="carrinho-vazio-msg">Seu carrinho está vazio.<br>Escolha um vidro pra começar.</div>`;
     btnContinuar.disabled = true;
     return;
   }
-  btnContinuar.disabled = false;
-
-  el.innerHTML = estado.carrinho.map(it => `
-    <div class="carrinho-lista-item">
+  const temSelecionado = estado.carrinho.some(it => it.selecionado) || acessoriosComQtd.length > 0;
+  btnContinuar.disabled = !temSelecionado;
+  const htmlVidros = estado.carrinho.map(it => `
+    <div class="carrinho-lista-item ${it.selecionado ? 'selecionado' : 'nao-selecionado'}">
+      <div class="carrinho-lista-check">
+        <input type="checkbox" data-sel="${it.id}" ${it.selecionado ? "checked" : ""}>
+      </div>
       <img src="${it.img || ''}" alt="${it.productName}" onerror="this.style.background='#EFEFEA'; this.src='';">
       <div class="info">
         <div class="nome">${it.productName}</div>
@@ -1953,6 +2011,59 @@ function renderListaCarrinho() {
         <button class="carrinho-lista-rm" data-rm="${it.id}">Remover</button>
       </div>
     </div>`).join("");
+
+  const htmlAcessorios = acessoriosComQtd.length ? `
+    <div class="carrinho-lista-sep">Acessórios</div>
+    ${acessoriosComQtd.map(a => {
+      const qtd = estado.acessorios[a.id];
+      return `<div class="carrinho-lista-item selecionado">
+        <img src="${a.img || ''}" alt="${a.nome}" onerror="this.style.background='#EFEFEA'; this.src='';">
+        <div class="info">
+          <div class="nome">${a.nome}</div>
+          <div class="subtotal">R$ ${(qtd * a.preco_unit).toFixed(2)}</div>
+        </div>
+        <div class="carrinho-lista-acoes">
+          <div class="carrinho-lista-qtd">
+            <button data-acao-ac="menos" data-idac="${a.id}">−</button>
+            <span>${qtd}</span>
+            <button data-acao-ac="mais" data-idac="${a.id}">+</button>
+          </div>
+          <button class="carrinho-lista-rm" data-rmac="${a.id}">Remover</button>
+        </div>
+      </div>`;
+    }).join("")}
+  ` : "";
+
+  el.innerHTML = htmlVidros + htmlAcessorios;
+
+  el.querySelectorAll("[data-acao-ac]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.idac;
+      const atual = estado.acessorios[id] || 0;
+      estado.acessorios[id] = btn.dataset.acaoAc === "mais" ? atual + 1 : Math.max(0, atual - 1);
+      renderListaCarrinho();
+      renderAcessorios();
+      renderCarrinhoBadge();
+      atualizarTudo();
+    });
+  });
+  el.querySelectorAll("[data-rmac]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      estado.acessorios[btn.dataset.rmac] = 0;
+      renderListaCarrinho();
+      renderAcessorios();
+      renderCarrinhoBadge();
+      atualizarTudo();
+    });
+  });
+
+  el.querySelectorAll("[data-sel]").forEach(chk => {
+    chk.addEventListener("change", () => {
+      const item = estado.carrinho.find(i => i.id === chk.dataset.sel);
+      if (item) item.selecionado = chk.checked;
+      renderListaCarrinho();
+    });
+  });
 
   el.querySelectorAll("[data-acao]").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -2045,6 +2156,7 @@ function renderAcessorios() {
       const atual = estado.acessorios[id] || 0;
       estado.acessorios[id] = acao === "mais" ? atual + 1 : Math.max(0, atual - 1);
       renderAcessorios();
+      renderCarrinhoBadge();
       atualizarTudo();
     });
   });
@@ -2227,7 +2339,7 @@ function calcularPreco() {
   let total = 0;
   const linhas = [];
 
-  estado.carrinho.forEach(it => {
+  estado.carrinho.filter(it => it.selecionado).forEach(it => {
     total += it.subtotal;
     linhas.push({ tipo: "carrinho", id: it.id, texto: `${it.productName} — ${it.config.width}mm × ${it.config.height}mm (${it.area_m2.toFixed(2)} m²): R$ ${it.subtotal.toFixed(2)}` });
   });
@@ -2278,11 +2390,10 @@ function atualizarTudo() {
   const entregaOk = estado.formaEntrega === "retirada"
     || (estado.formaEntrega === "entrega" && !estado.entregaErro && !estado.entregaCalculando && estado.entregaValor > 0);
 
-  const pedidoValido = estado.carrinho.length > 0
+  const pedidoValido = estado.carrinho.some(it => it.selecionado)
     && estado.cliente.nome.trim() && estado.cliente.telefone.trim()
     && estado.formaPagamento
     && estado.formaEntrega && entregaOk;
-
   btnFinalizar.disabled = !pedidoValido;
 }
 
@@ -2553,7 +2664,7 @@ async function finalizarPedido() {
     delivery: estado.formaEntrega === "entrega" ? "entrega" : "retirada",
     deliveryKm: estado.formaEntrega === "entrega" ? estado.entregaKm : 0,
     payment: estado.formaPagamento,
-    items: [...estado.carrinho, ...montarItensAcessorios()],
+    items: [...estado.carrinho.filter(it => it.selecionado), ...montarItensAcessorios()],
     totals: { subtotal: subtotalSemFrete, volumeDiscount: 0, delivery: estado.formaEntrega === "entrega" ? estado.entregaValor : 0, total: total },
     status: "recebido",
     statusHistory: [{ status: "recebido", at: agora }],
@@ -2607,6 +2718,8 @@ async function finalizarPedido() {
       btnFinalizar.textContent = "Pedido Enviado ✓";
     }
 
+    resetarAposFinalizarPedido();
+
   } catch (err) {
     msgStatus.className = "msg-status erro";
     msgStatus.textContent = "Não foi possível enviar o pedido. Confira sua conexão e tente de novo.";
@@ -2619,6 +2732,34 @@ async function finalizarPedido() {
 btnFinalizar.addEventListener("click", finalizarPedido);
 
 // Eventos do Modal Pix
+function resetarAposFinalizarPedido() {
+  estado.carrinho = estado.carrinho.filter(it => !it.selecionado); // remove só o que foi comprado agora; o resto fica salvo pra depois
+  estado.acessorios = {};
+  estado.formaPagamento = null;
+  estado.formaEntrega = null;
+  estado.entregaKm = 0;
+  estado.entregaValor = 0;
+  estado.entregaErro = "";
+  estado.cliente.endereco = "";
+
+  renderCarrinhoBadge();
+  renderAcessorios();
+  renderPagamento();
+
+  const cardRet = document.getElementById("cardRetirada");
+  const cardEnt = document.getElementById("cardEntrega");
+  if (cardRet) cardRet.classList.remove("selected");
+  if (cardEnt) cardEnt.classList.remove("selected");
+  const blocoEndereco = document.getElementById("blocoEnderecoEntrega");
+  if (blocoEndereco) blocoEndereco.style.display = "none";
+  const inputEnd = document.getElementById("inputEndereco");
+  if (inputEnd) inputEnd.value = "";
+  const freteEl = document.getElementById("freteStatus");
+  if (freteEl) freteEl.classList.remove("visivel");
+
+  atualizarTudo();
+}
+
 document.getElementById("btnCopiarPix").addEventListener("click", () => {
   const copyText = document.getElementById("pixCopiaCola");
   copyText.select();
