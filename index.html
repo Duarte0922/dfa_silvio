@@ -833,6 +833,16 @@
   .grupo-produtos { margin-bottom: 26px; }
   .grupo-titulo { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 10px; padding-left: 8px; border-left: 4px solid var(--accent); }
 
+  /* ===== Modal de acessório (quantidade) ===== */
+  .modal-acessorio-topo { display: flex; gap: 12px; align-items: center; margin-bottom: 16px; }
+  .modal-acessorio-topo img { width: 64px; height: 64px; object-fit: cover; border-radius: 8px; background: #EFEFEA; }
+  .modal-acessorio-topo .nome { font-weight: 700; font-size: 16px; }
+  .modal-acessorio-topo .preco { font-size: 13px; color: var(--accent-dark); font-weight: 700; margin-top: 4px; }
+  .ma-qtd-control { display: flex; align-items: center; justify-content: center; gap: 18px; padding: 10px 0; }
+  .ma-qtd-btn { width: 42px; height: 42px; border-radius: 8px; border: 1.5px solid var(--border); background: var(--bg); font-size: 20px; cursor: pointer; }
+  .ma-qtd-btn:hover { border-color: var(--accent); }
+  .ma-qtd-val { min-width: 30px; text-align: center; font-weight: 700; font-size: 18px; }
+
   /* Modal de Pagamento Pix */
   .modal-overlay {
     position: fixed;
@@ -952,7 +962,34 @@
     max-width:none; transform:translate(-50%,-50%); object-fit:cover;
   }
   .preview-vidro-legenda { text-align:center; font-size:11.5px; color:var(--text-muted); margin-top:6px; }  
-
+.btn-acompanhar {
+  position: fixed; top: 60px; right: 14px; z-index: 30;
+  background: var(--bg-card); color: var(--accent-dark); border: 1.5px solid var(--accent);
+  border-radius: 30px; padding: 9px 15px; font-weight: 700; font-size: 12.5px; cursor: pointer;
+  box-shadow: var(--shadow);
+}
+#painelAcompanharOverlay { display:none; position:fixed; inset:0; background:var(--bg); z-index:85; overflow-y:auto; }
+#painelAcompanharOverlay.aberto { display:block; }
+.acompanhar-topo { position:sticky; top:0; background:var(--bg-card); border-bottom:1px solid var(--border); padding:14px 16px; display:flex; align-items:center; gap:12px; z-index:2; }
+.acompanhar-topo h2 { margin:0; font-size:17px; flex:1; }
+.acompanhar-busca { display:flex; gap:8px; padding:16px; max-width:640px; margin:0 auto; }
+.acompanhar-busca input { flex:1; padding:12px; font-size:15px; border:1.5px solid var(--border); border-radius:8px; }
+.acompanhar-lista { max-width:640px; margin:0 auto; padding:0 16px 40px; }
+.acomp-pedido-card { background:var(--bg-card); border:1.5px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:14px; box-shadow:var(--shadow); }
+.acomp-pedido-card .topo { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
+.acomp-pedido-card .id { font-weight:700; color:var(--accent-dark); }
+.acomp-pedido-card .itens-resumo { font-size:12px; color:var(--text-muted); margin-bottom:12px; }
+.acomp-steps { display:flex; justify-content:space-between; position:relative; margin: 18px 4px 8px; }
+.acomp-steps::before { content:""; position:absolute; top:14px; left:0; right:0; height:2px; background:var(--border); z-index:0; }
+.acomp-step { position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; flex:1; text-align:center; }
+.acomp-step .bolinha { width:28px; height:28px; border-radius:50%; background:var(--border); color:#fff; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; }
+.acomp-step.feito .bolinha { background: var(--accent); }
+.acomp-step.atual .bolinha { background: var(--accent-dark); box-shadow:0 0 0 4px var(--accent-light); }
+.acomp-step .rotulo { font-size:10.5px; color:var(--text-muted); margin-top:6px; max-width:70px; }
+.acomp-step.feito .rotulo, .acomp-step.atual .rotulo { color:var(--text); font-weight:600; }
+.acomp-msg-atual { background:var(--accent-light); border-radius:8px; padding:12px 14px; margin-top:14px; font-size:13.5px; color:var(--accent-dark); font-weight:600; }
+.acomp-prazo { font-size:12px; color:var(--text-muted); margin-top:6px; }
+.acomp-vazio { text-align:center; color:var(--text-muted); padding:40px 20px; font-size:13.5px; }
 .oculto { display: none !important; }
 .tela-gate { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--bg); padding: 20px; }
 .caixa-gate { width: 100%; max-width: 360px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 28px; text-align: center; }
@@ -1011,6 +1048,7 @@
 <button class="carrinho-badge" id="btnAbrirCarrinho">
   🛒 Carrinho <span class="qtd" id="carrinhoQtd">0</span>
 </button>
+<button class="btn-acompanhar" id="btnAbrirAcompanhar">📦 Acompanhar pedido</button>
 </header>
 
 <div class="carrossel-wrap">
@@ -1045,6 +1083,15 @@
     <div style="margin-top:22px;padding-top:18px;border-top:1px dashed var(--border);">
       <div style="font-weight:700;font-size:15px;margin-bottom:12px;">Catálogo completo (por tipo e acabamento)</div>
       <div id="gradeCatalogoWrap"></div>
+    </div>
+
+    <div style="margin-top:22px;padding-top:18px;border-top:1px dashed var(--border);">
+      <div class="grupo-titulo">Itens avulsos</div>
+      <div class="recom-track-wrap">
+        <button class="recom-seta esquerda" id="acessoriosSetaEsquerda" aria-label="Anterior">‹</button>
+        <div class="grade-track" id="acessoriosTrack"></div>
+        <button class="recom-seta direita" id="acessoriosSetaDireita" aria-label="Próximo">›</button>
+      </div>
     </div>
     <button type="button" class="btn-abrir-espelhos" id="btnAbrirEspelhos">🪞 Ver modelos de Espelho</button>
 
@@ -1100,12 +1147,6 @@
   <div class="preview-vidro-legenda" id="previewVidroLegenda">Escolha o vidro e digite a medida pra ver a prévia</div>
 
   <!-- ETAPA 3: Acessórios avulsos -->
-  <div class="step">
-    <span class="step-label">Passo 3</span>
-    <h2>Acessórios (opcional)</h2>
-    <div id="acessoriosList"></div>
-  </div>
-
 </main>
 
 <div id="painelCarrinhoOverlay">
@@ -1208,7 +1249,18 @@
 <!-- fim painelCarrinhoOverlay -->
 
 </div>
-<!-- fim tela fazerPedido -->
+<!-- fim painelCarrinhoOverlay -->
+
+<div id="painelAcompanharOverlay">
+  <div class="acompanhar-topo">
+    <h2>📦 Acompanhar pedido</h2>
+    <button class="btn-fechar-carrinho" id="btnFecharAcompanhar">✕</button>
+  </div>
+  <div class="acompanhar-busca">
+    <input type="tel" id="inputTelAcompanhar" placeholder="Digite o telefone usado no pedido" inputmode="tel">
+  </div>
+  <div class="acompanhar-lista" id="acompanharLista"></div>
+</div>
 
 <div class="modal-overlay" id="modalImagemVidro">
   <div class="modal-imagem-content">
@@ -1270,6 +1322,31 @@
 </div>
 
 <!-- Modal de Pagamento Pix -->
+<!-- Modal de quantidade de acessório -->
+<div class="modal-produto-overlay" id="modalAcessorio">
+  <div class="modal-produto-caixa" style="position:relative;">
+    <button class="btn-fechar-modal-produto" id="btnFecharModalAcessorio">✕</button>
+    <div class="modal-acessorio-topo">
+      <img id="maImg" src="" alt="">
+      <div>
+        <div class="nome" id="maNome"></div>
+        <div class="preco" id="maPreco"></div>
+      </div>
+    </div>
+    <div class="ma-qtd-control">
+      <button class="ma-qtd-btn" id="maMenos">−</button>
+      <span class="ma-qtd-val" id="maQtd">0</span>
+      <button class="ma-qtd-btn" id="maMais">+</button>
+    </div>
+    <div class="modal-produto-preco-preview">
+      <span>Subtotal deste item</span>
+      <span class="valor" id="maSubtotalPreview">R$ 0,00</span>
+    </div>
+    <button class="btn-add-carrinho" id="btnConfirmarAcessorio">Adicionar ao carrinho</button>
+  </div>
+</div>
+
+<!-- MODAL PIX -->
 <div class="modal-overlay" id="modalPix">
   <div class="modal-content">
     <h3>✅ Pedido Registrado!</h3>
@@ -1503,6 +1580,8 @@ const PRODUTOS_DESTAQUE = [
   { id: "guarda-corpo",   nome: "Guarda-Corpo",    preco_m2: 340.00, espessura_mm: 10, img: "img/guarda-corpo.jpg", tarja: "Segurança",  cor: "laranja", min_mm: 50 }
 ];
 
+
+
 const ACESSORIOS = [
   { id: "puxador-concha",   nome: "Puxador Concha",     preco_unit: 28.00, img: "img/puxador-concha.jpg" },
   { id: "puxador-h",        nome: "Puxador H",          preco_unit: 45.00, img: "img/puxador-h.jpg" },
@@ -1524,6 +1603,7 @@ const estado = {
   erroAltura: "",
   erroLargura: "",
   acessorios: {},
+  acessoriosSelecionados: {},
   cliente: { nome: "", telefone: "", endereco: "" },
   formaPagamento: null,
   formaEntrega: null,
@@ -1728,6 +1808,77 @@ function renderGradeCatalogoAgrupado() {
 }
 
 renderCarrossel();
+
+/* =========================================================
+   ITENS AVULSOS (acessórios) — carrossel no topo + modal de qtd
+   ========================================================= */
+const modalAcessorioEl = document.getElementById("modalAcessorio");
+let acessorioEmEdicao = null;
+
+function renderAcessoriosTopo() {
+  const track = document.getElementById("acessoriosTrack");
+  if (!track) return;
+  track.innerHTML = ACESSORIOS.map(a => {
+    const qtd = estado.acessorios[a.id] || 0;
+    return `<div class="grade-card" data-acid="${a.id}">
+      <img src="${a.img}" alt="${a.nome}" onerror="this.style.background='#EFEFEA'; this.src='';">
+      <div class="info">
+        <div class="esp">${a.nome}${qtd > 0 ? ` · ${qtd}x no carrinho` : ""}</div>
+        <div class="preco">R$ ${a.preco_unit.toFixed(2)}</div>
+      </div>
+    </div>`;
+  }).join("");
+
+  track.querySelectorAll(".grade-card").forEach(card => {
+    card.addEventListener("click", () => abrirModalAcessorio(card.dataset.acid));
+  });
+}
+document.getElementById("acessoriosSetaEsquerda").addEventListener("click", () => document.getElementById("acessoriosTrack").scrollBy({ left: -320, behavior: "smooth" }));
+document.getElementById("acessoriosSetaDireita").addEventListener("click", () => document.getElementById("acessoriosTrack").scrollBy({ left: 320, behavior: "smooth" }));
+
+function abrirModalAcessorio(id) {
+  acessorioEmEdicao = ACESSORIOS.find(a => a.id === id);
+  if (!acessorioEmEdicao) return;
+
+  document.getElementById("maImg").src = acessorioEmEdicao.img;
+  document.getElementById("maNome").textContent = acessorioEmEdicao.nome;
+  document.getElementById("maPreco").textContent = `R$ ${acessorioEmEdicao.preco_unit.toFixed(2)} / unidade`;
+  atualizarModalAcessorio();
+  modalAcessorioEl.classList.add("ativo");
+}
+
+function fecharModalAcessorio() {
+  modalAcessorioEl.classList.remove("ativo");
+}
+document.getElementById("btnFecharModalAcessorio").addEventListener("click", fecharModalAcessorio);
+modalAcessorioEl.addEventListener("click", (e) => { if (e.target === modalAcessorioEl) fecharModalAcessorio(); });
+
+function atualizarModalAcessorio() {
+  if (!acessorioEmEdicao) return;
+  const qtd = estado.acessorios[acessorioEmEdicao.id] || 0;
+  document.getElementById("maQtd").textContent = qtd;
+  document.getElementById("maSubtotalPreview").textContent = "R$ " + (qtd * acessorioEmEdicao.preco_unit).toFixed(2).replace(".", ",");
+}
+
+document.getElementById("maMenos").addEventListener("click", () => {
+  if (!acessorioEmEdicao) return;
+  const atual = estado.acessorios[acessorioEmEdicao.id] || 0;
+  estado.acessorios[acessorioEmEdicao.id] = Math.max(0, atual - 1);
+  atualizarModalAcessorio();
+});
+document.getElementById("maMais").addEventListener("click", () => {
+  if (!acessorioEmEdicao) return;
+  const atual = estado.acessorios[acessorioEmEdicao.id] || 0;
+  estado.acessorios[acessorioEmEdicao.id] = atual + 1;
+  atualizarModalAcessorio();
+});
+
+document.getElementById("btnConfirmarAcessorio").addEventListener("click", () => {
+  fecharModalAcessorio();
+  renderAcessoriosTopo();
+  renderCarrinhoBadge();
+  atualizarTudo();
+});
 
 document.getElementById("linkWhatsapp").href = "https://wa.me/" + WHATSAPP_NUMERO;
 document.getElementById("linkWhatsappBanner").href = "https://wa.me/" + WHATSAPP_NUMERO;
@@ -1989,7 +2140,8 @@ function renderListaCarrinho() {
     btnContinuar.disabled = true;
     return;
   }
-  const temSelecionado = estado.carrinho.some(it => it.selecionado) || acessoriosComQtd.length > 0;
+  const temSelecionado = estado.carrinho.some(it => it.selecionado)
+    || acessoriosComQtd.some(a => estado.acessoriosSelecionados[a.id] !== false);
   btnContinuar.disabled = !temSelecionado;
   const htmlVidros = estado.carrinho.map(it => `
     <div class="carrinho-lista-item ${it.selecionado ? 'selecionado' : 'nao-selecionado'}">
@@ -2016,7 +2168,11 @@ function renderListaCarrinho() {
     <div class="carrinho-lista-sep">Acessórios</div>
     ${acessoriosComQtd.map(a => {
       const qtd = estado.acessorios[a.id];
-      return `<div class="carrinho-lista-item selecionado">
+      const selecionadoAc = estado.acessoriosSelecionados[a.id] !== false;
+      return `<div class="carrinho-lista-item ${selecionadoAc ? 'selecionado' : 'nao-selecionado'}">
+        <div class="carrinho-lista-check">
+          <input type="checkbox" data-selac="${a.id}" ${selecionadoAc ? "checked" : ""}>
+        </div>
         <img src="${a.img || ''}" alt="${a.nome}" onerror="this.style.background='#EFEFEA'; this.src='';">
         <div class="info">
           <div class="nome">${a.nome}</div>
@@ -2042,7 +2198,7 @@ function renderListaCarrinho() {
       const atual = estado.acessorios[id] || 0;
       estado.acessorios[id] = btn.dataset.acaoAc === "mais" ? atual + 1 : Math.max(0, atual - 1);
       renderListaCarrinho();
-      renderAcessorios();
+      renderAcessoriosTopo();
       renderCarrinhoBadge();
       atualizarTudo();
     });
@@ -2051,7 +2207,7 @@ function renderListaCarrinho() {
     btn.addEventListener("click", () => {
       estado.acessorios[btn.dataset.rmac] = 0;
       renderListaCarrinho();
-      renderAcessorios();
+      renderAcessoriosTopo();
       renderCarrinhoBadge();
       atualizarTudo();
     });
@@ -2064,7 +2220,12 @@ function renderListaCarrinho() {
       renderListaCarrinho();
     });
   });
-
+  el.querySelectorAll("[data-selac]").forEach(chk => {
+    chk.addEventListener("change", () => {
+      estado.acessoriosSelecionados[chk.dataset.selac] = chk.checked;
+      renderListaCarrinho();
+    });
+  });
   el.querySelectorAll("[data-acao]").forEach(btn => {
     btn.addEventListener("click", () => {
       const item = estado.carrinho.find(i => i.id === btn.dataset.id);
@@ -2346,7 +2507,8 @@ function calcularPreco() {
 
   ACESSORIOS.forEach(a => {
     const qtd = estado.acessorios[a.id] || 0;
-    if (qtd > 0) {
+    const selecionadoAc = estado.acessoriosSelecionados[a.id] !== false;
+    if (qtd > 0 && selecionadoAc) {
       const sub = qtd * a.preco_unit;
       total += sub;
       linhas.push({ tipo: "acessorio", texto: `${a.nome} × ${qtd}: R$ ${sub.toFixed(2)}` });
@@ -2626,7 +2788,7 @@ function montarItemVidro(total) {
 
 function montarItensAcessorios() {
   return ACESSORIOS
-    .filter(a => (estado.acessorios[a.id] || 0) > 0)
+    .filter(a => (estado.acessorios[a.id] || 0) > 0 && estado.acessoriosSelecionados[a.id] !== false)
     .map(a => {
       const qtd = estado.acessorios[a.id];
       return {
@@ -2651,6 +2813,8 @@ async function finalizarPedido() {
   const agora = new Date().toISOString();
   const pedidoId = "PED-" + Date.now().toString(36).toUpperCase();
   const subtotalSemFrete = total - (estado.formaEntrega === "entrega" ? estado.entregaValor : 0);
+  const itensFinal = [...estado.carrinho.filter(it => it.selecionado), ...montarItensAcessorios()];
+  const prazo = calcularPrazoProducao(itensFinal);
 
   const pedido = {
     id: pedidoId,
@@ -2664,13 +2828,15 @@ async function finalizarPedido() {
     delivery: estado.formaEntrega === "entrega" ? "entrega" : "retirada",
     deliveryKm: estado.formaEntrega === "entrega" ? estado.entregaKm : 0,
     payment: estado.formaPagamento,
-    items: [...estado.carrinho.filter(it => it.selecionado), ...montarItensAcessorios()],
+    items: itensFinal,
+    prazoEstimado: prazo,
     totals: { subtotal: subtotalSemFrete, volumeDiscount: 0, delivery: estado.formaEntrega === "entrega" ? estado.entregaValor : 0, total: total },
     status: "recebido",
     statusHistory: [{ status: "recebido", at: agora }],
     isPro: false,
     customerId: ""
   };
+  localStorage.setItem("dfa_ultimo_telefone", pedido.phone);
   try {
     await db.ref("pedidos/" + pedido.id).set(pedido);
 
@@ -2730,11 +2896,32 @@ async function finalizarPedido() {
 }
 
 btnFinalizar.addEventListener("click", finalizarPedido);
-
+/* =========================================================
+   PRAZO DE PRODUÇÃO
+   ========================================================= */
+function calcularPrazoProducao(itens) {
+  const pecasCortadas = itens.filter(it => it.productType === "glass").reduce((s, it) => s + (it.qty || 1), 0);
+  if (pecasCortadas === 0) {
+    return { tipo: "horas", texto: "2 a 4 horas" };
+  }
+  let dias;
+  if (pecasCortadas <= 6) dias = 2;
+  else if (pecasCortadas <= 15) dias = 3;
+  else if (pecasCortadas <= 25) dias = 4;
+  else dias = 5;
+  return { tipo: "dias", texto: dias + " dia" + (dias > 1 ? "s" : "") + " úteis" };
+}
 // Eventos do Modal Pix
 function resetarAposFinalizarPedido() {
   estado.carrinho = estado.carrinho.filter(it => !it.selecionado); // remove só o que foi comprado agora; o resto fica salvo pra depois
-  estado.acessorios = {};
+  const acessoriosRestantes = {};
+  ACESSORIOS.forEach(a => {
+    if ((estado.acessorios[a.id] || 0) > 0 && estado.acessoriosSelecionados[a.id] === false) {
+      acessoriosRestantes[a.id] = estado.acessorios[a.id];
+    }
+  });
+  estado.acessorios = acessoriosRestantes;
+  estado.acessoriosSelecionados = {};
   estado.formaPagamento = null;
   estado.formaEntrega = null;
   estado.entregaKm = 0;
@@ -2743,7 +2930,7 @@ function resetarAposFinalizarPedido() {
   estado.cliente.endereco = "";
 
   renderCarrinhoBadge();
-  renderAcessorios();
+  renderAcessoriosTopo();
   renderPagamento();
 
   const cardRet = document.getElementById("cardRetirada");
@@ -2777,10 +2964,97 @@ document.getElementById("btnFecharModal").addEventListener("click", () => {
 });
 
 /* =========================================================
+   ACOMPANHAR PEDIDO
+   ========================================================= */
+let pedidosCache = {};
+let telefoneAcompanhamento = "";
+let listenerPedidosIniciado = false;
+
+function fmtHoraCliente(iso) {
+  if (!iso) return "-";
+  const d = new Date(iso);
+  return d.toLocaleDateString("pt-BR") + " " + d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+}
+
+function iniciarListenerPedidos() {
+  db.ref("pedidos").on("value", snap => {
+    pedidosCache = snap.val() || {};
+    renderAcompanhamento();
+  });
+}
+
+function cardAcompanhamento(p) {
+  const steps = ["recebido", "em_producao", "pronto", "entregue"];
+  const idxAtual = steps.indexOf(p.status);
+  const rotulos = {
+    recebido: "Pedido aceito",
+    em_producao: "Em produção",
+    pronto: p.delivery === "entrega" ? "A caminho" : "Pronto p/ retirada",
+    entregue: p.delivery === "entrega" ? "Entregue" : "Retirado"
+  };
+  const stepsHtml = steps.map((st, i) => {
+    let classe = "";
+    if (i < idxAtual) classe = "feito";
+    else if (i === idxAtual) classe = "atual";
+    return `<div class="acomp-step ${classe}">
+      <div class="bolinha">${i < idxAtual ? "✓" : (i + 1)}</div>
+      <div class="rotulo">${rotulos[st]}</div>
+    </div>`;
+  }).join("");
+
+  let msgAtual = "";
+  if (p.status === "recebido") msgAtual = "✅ Recebemos seu pedido! Em breve começamos a produção.";
+  else if (p.status === "em_producao") msgAtual = "🔧 Seu pedido está sendo produzido.";
+  else if (p.status === "pronto") msgAtual = p.delivery === "entrega" ? "🚚 Produto a caminho!" : "🏠 Produto pronto para retirada!";
+  else if (p.status === "entregue") msgAtual = p.delivery === "entrega" ? "🎉 Pedido entregue. Obrigado pela preferência!" : "🎉 Pedido retirado. Obrigado pela preferência!";
+
+  const prazoTxt = p.prazoEstimado?.texto ? `Prazo estimado: ${p.prazoEstimado.texto}` : "";
+
+  return `<div class="acomp-pedido-card">
+    <div class="topo"><span class="id">${p.id}</span><span style="font-size:12px;color:var(--text-muted);">${fmtHoraCliente(p.date)}</span></div>
+    <div class="itens-resumo">${(p.items || []).map(i => i.productName).join(", ")}</div>
+    <div class="acomp-steps">${stepsHtml}</div>
+    <div class="acomp-msg-atual">${msgAtual}</div>
+    ${prazoTxt ? `<div class="acomp-prazo">${prazoTxt}</div>` : ""}
+  </div>`;
+}
+
+function renderAcompanhamento() {
+  const el = document.getElementById("acompanharLista");
+  const tel = apenasDigitos(telefoneAcompanhamento);
+  if (!tel) { el.innerHTML = ""; return; }
+  const pedidosDoTel = Object.values(pedidosCache)
+    .filter(p => apenasDigitos(p.phone) === tel)
+    .sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+  el.innerHTML = pedidosDoTel.length
+    ? pedidosDoTel.map(cardAcompanhamento).join("")
+    : `<div class="acomp-vazio">Nenhum pedido encontrado com esse telefone.</div>`;
+}
+
+document.getElementById("btnAbrirAcompanhar").addEventListener("click", () => {
+  document.getElementById("painelAcompanharOverlay").classList.add("aberto");
+  const inputTel = document.getElementById("inputTelAcompanhar");
+  const ultimoTel = localStorage.getItem("dfa_ultimo_telefone");
+  if (ultimoTel && !inputTel.value) {
+    inputTel.value = ultimoTel;
+    telefoneAcompanhamento = ultimoTel;
+  }
+  if (!listenerPedidosIniciado) { iniciarListenerPedidos(); listenerPedidosIniciado = true; }
+  else renderAcompanhamento();
+});
+document.getElementById("btnFecharAcompanhar").addEventListener("click", () => {
+  document.getElementById("painelAcompanharOverlay").classList.remove("aberto");
+});
+document.getElementById("inputTelAcompanhar").addEventListener("input", (e) => {
+  telefoneAcompanhamento = e.target.value;
+  renderAcompanhamento();
+});
+
+/* =========================================================
    INIT
    ========================================================= */
 renderVidros();
-renderAcessorios();
+renderAcessoriosTopo();
 renderPagamento();
 atualizarTudo();
 </script>
