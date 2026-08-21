@@ -244,11 +244,27 @@
     .pedidos-lista { width: 100%; max-height: 260px; }
     .pipeline { grid-template-columns: repeat(2, 1fr); }
   }
+  .etiqueta-wrap { display: none; }
+  .etiqueta-card {
+    border: 1.5px solid #000; border-radius: 4px; padding: 10px 12px;
+    margin-bottom: 10px; width: 320px; font-family: Arial, sans-serif;
+    page-break-inside: avoid;
+  }
+  .etiqueta-card .et-origem {
+    background: #000; color: #fff; font-size: 11px; font-weight: 800;
+    text-align: center; padding: 3px 0; letter-spacing: 1px; margin-bottom: 6px;
+  }
+  .etiqueta-card .et-pedido { font-size: 13px; font-weight: 800; }
+  .etiqueta-card .et-cliente { font-size: 12px; margin-top: 2px; }
+  .etiqueta-card .et-produto { font-size: 14px; font-weight: 800; margin-top: 8px; }
+  .etiqueta-card .et-medida { font-size: 20px; font-weight: 900; margin-top: 4px; }
+  .etiqueta-card .et-detalhe { font-size: 11px; color: #333; margin-top: 4px; }
+
   @media print {
     body * { visibility: hidden; }
-    #detalhePedido, #detalhePedido * { visibility: visible; }
-    #detalhePedido { position: absolute; top: 0; left: 0; width: 100%; border: none; box-shadow: none; padding: 0; }
-    #detalhePedido .det-acoes { display: none; }
+    .imprimir-alvo, .imprimir-alvo * { visibility: visible; }
+    .imprimir-alvo { position: absolute; top: 0; left: 0; width: 100%; border: none; box-shadow: none; padding: 0; }
+    .imprimir-alvo .det-acoes { display: none; }
   }
 </style>
 </head>
@@ -565,6 +581,7 @@
 
   </main>
 </div>
+<div class="etiqueta-wrap" id="etiquetaPedido"></div>
 
 <div class="modal-fundo" id="modalFundo">
   <div class="modal-caixa" id="modalCaixa"></div>
@@ -1035,11 +1052,42 @@ function renderDetalhePedido(order) {
     <div class="det-acoes">
       ${prox ? `<button class="btn btn-primario" id="btnAvancar">Avançar para: ${STATUS_LABELS[prox]}</button>` : ""}
       <button class="btn btn-secundario" id="btnImprimir">🖨️ Imprimir ficha</button>
+      <button class="btn btn-secundario" id="btnGerarEtiqueta">🏷️ Gerar etiqueta</button>
     </div>
   `;
 
   if (prox) document.getElementById("btnAvancar").addEventListener("click", () => avancarStatus(order.id, prox));
-  document.getElementById("btnImprimir").addEventListener("click", () => window.print());
+  document.getElementById("btnImprimir").addEventListener("click", () => imprimirComAlvo("detalhePedido"));
+  document.getElementById("btnGerarEtiqueta").addEventListener("click", () => {
+    renderEtiquetaPedido(order);
+    imprimirComAlvo("etiquetaPedido");
+  });
+}
+
+function imprimirComAlvo(elId) {
+  document.querySelectorAll(".imprimir-alvo").forEach(el => el.classList.remove("imprimir-alvo"));
+  document.getElementById(elId).classList.add("imprimir-alvo");
+  window.print();
+}
+
+function renderEtiquetaPedido(order) {
+  const el = document.getElementById("etiquetaPedido");
+  const itensVidro = (order.items || []).filter(i => i.productType === "glass" || i.productType === "mirror");
+  const itens = itensVidro.length ? itensVidro : (order.items || []);
+  el.innerHTML = itens.map(item => {
+    const c = item.config || {};
+    const medida = (c.width && c.height) ? `${c.width} × ${c.height} mm` : "";
+    return `
+    <div class="etiqueta-card">
+      <div class="et-origem">VENDAS ECOMMERCE</div>
+      <div class="et-pedido">Pedido: ${order.id}</div>
+      <div class="et-cliente">Cliente: ${order.name || "-"}</div>
+      <div class="et-produto">${item.productName || "-"}</div>
+      ${medida ? `<div class="et-medida">${medida}</div>` : ""}
+      ${c.thickness ? `<div class="et-detalhe">Espessura: ${c.thickness}mm</div>` : ""}
+      <div class="et-detalhe">Qtd: ${item.qty || 1}</div>
+    </div>`;
+  }).join("");
 }
 
 function avancarStatus(pid, novoStatus) {
