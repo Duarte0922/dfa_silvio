@@ -2517,7 +2517,7 @@ function calcularPreco() {
 
   if (estado.formaEntrega === "entrega" && estado.entregaValor > 0) {
     total += estado.entregaValor;
-    linhas.push({ tipo: "entrega", texto: `Entrega — ${estado.entregaKm.toFixed(1)} km (ida e volta): R$ ${estado.entregaValor.toFixed(2)}` });
+    linhas.push({ tipo: "entrega", texto: `Entrega — ${estado.entregaKm.toFixed(1)} km: R$ ${estado.entregaValor.toFixed(2)}` });
   }
 
   return { total, linhas };
@@ -2552,7 +2552,12 @@ function atualizarTudo() {
   const entregaOk = estado.formaEntrega === "retirada"
     || (estado.formaEntrega === "entrega" && !estado.entregaErro && !estado.entregaCalculando && estado.entregaValor > 0);
 
-  const pedidoValido = estado.carrinho.some(it => it.selecionado)
+  const temVidroSelecionado = estado.carrinho.some(it => it.selecionado);
+  const temAcessorioSelecionado = ACESSORIOS.some(a =>
+    (estado.acessorios[a.id] || 0) > 0 && estado.acessoriosSelecionados[a.id] !== false
+  );
+
+  const pedidoValido = (temVidroSelecionado || temAcessorioSelecionado)
     && estado.cliente.nome.trim() && estado.cliente.telefone.trim()
     && estado.formaPagamento
     && estado.formaEntrega && entregaOk;
@@ -2687,7 +2692,7 @@ async function calcularFrete() {
       estado.entregaKm = km;
       estado.entregaValor = valor;
       estado.entregaErro = "";
-      mostrarStatusFrete(`🚚 Distância até você: ${km.toFixed(1)} km · Frete (ida e volta): R$ ${valor.toFixed(2)}`, "ok");
+      mostrarStatusFrete(`🚚 Distância até você: ${km.toFixed(1)} km · Frete: R$ ${valor.toFixed(2)}`, "ok");
     }
   } catch (err) {
     if (meuRequestId !== freteRequestId) return;
