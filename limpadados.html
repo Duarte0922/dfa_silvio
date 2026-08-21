@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DFA — Limpar Pedidos de Teste</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<style>
+  :root {
+    --bg: #FAFAF8; --bg-card: #FFFFFF; --border: #E4E1DA;
+    --text: #232323; --text-muted: #6B6B63;
+    --danger: #C0392B; --danger-light: #FBEAE8;
+    --accent: #1B6B3C; --accent-light: #E7F3EB;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--bg); color: var(--text); display: flex; align-items: center;
+    justify-content: center; min-height: 100vh; padding: 20px;
+  }
+  .caixa {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06); padding: 32px; max-width: 480px; width: 100%;
+  }
+  h1 { font-size: 19px; margin: 0 0 4px; }
+  .sub { font-size: 13px; color: var(--text-muted); margin-bottom: 22px; }
+  .aviso {
+    background: var(--danger-light); border: 1px solid #E8B4AC; border-radius: 8px;
+    padding: 12px 14px; font-size: 13px; color: #7A2318; margin-bottom: 20px;
+  }
+  .contador {
+    background: var(--accent-light); border-radius: 8px; padding: 14px 16px;
+    text-align: center; margin-bottom: 20px;
+  }
+  .contador .num { font-size: 30px; font-weight: 800; color: var(--accent); }
+  .contador .lbl { font-size: 12.5px; color: var(--text-muted); margin-top: 2px; }
+  label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+  input[type="text"] {
+    width: 100%; padding: 11px; font-size: 15px; border: 1.5px solid var(--border);
+    border-radius: 8px; margin-bottom: 6px; font-family: inherit;
+  }
+  .erro { color: var(--danger); font-size: 12.5px; min-height: 16px; margin-bottom: 10px; }
+  button {
+    width: 100%; padding: 13px; border-radius: 8px; font-size: 14.5px; font-weight: 700;
+    cursor: pointer; border: none; font-family: inherit;
+  }
+  .btn-apagar { background: var(--danger); color: #fff; margin-bottom: 10px; }
+  .btn-apagar:disabled { background: #D8B9B6; cursor: not-allowed; }
+  .btn-voltar { background: var(--bg); border: 1px solid var(--border); color: var(--text); }
+  .status { text-align: center; font-size: 13.5px; margin-top: 14px; display: none; }
+  .status.ok { display: block; color: var(--accent); font-weight: 700; }
+  .status.erro { display: block; color: var(--danger); font-weight: 700; }
+  .carregando { text-align: center; color: var(--text-muted); font-size: 13px; }
+</style>
+</head>
+<body>
+
+<div class="caixa">
+  <h1>🗑️ Limpar pedidos de teste</h1>
+  <div class="sub">DFA Vidros Silvio — apaga todos os pedidos do Firebase antes de começar a operar de verdade.</div>
+
+  <div class="aviso">
+    ⚠️ Isso apaga <b>todos os pedidos</b> cadastrados (testes e reais). Não afeta catálogo, estoque, clientes ou funcionários. Não tem como desfazer.
+  </div>
+
+  <div class="contador" id="contadorBox">
+    <div class="carregando" id="carregandoTxt">Verificando pedidos no banco...</div>
+  </div>
+
+  <div id="formApagar" style="display:none;">
+    <label for="confirmInput">Digite <b>APAGAR</b> para confirmar:</label>
+    <input type="text" id="confirmInput" placeholder="APAGAR" autocomplete="off">
+    <div class="erro" id="erroTxt"></div>
+    <button class="btn-apagar" id="btnApagar" disabled>Apagar todos os pedidos</button>
+  </div>
+
+  <div class="status" id="statusMsg"></div>
+</div>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyDkUcB6nEV8MbHus-O4onbd_0GNtxTYddw",
+  authDomain: "dfa-vidros-silvio.firebaseapp.com",
+  databaseURL: "https://dfa-vidros-silvio-default-rtdb.firebaseio.com",
+  projectId: "dfa-vidros-silvio",
+  storageBucket: "dfa-vidros-silvio.firebasestorage.app",
+  messagingSenderId: "438096473976",
+  appId: "1:438096473976:web:3d9f24fb8d02193284228d"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+const contadorBox = document.getElementById("contadorBox");
+const formApagar = document.getElementById("formApagar");
+const confirmInput = document.getElementById("confirmInput");
+const btnApagar = document.getElementById("btnApagar");
+const erroTxt = document.getElementById("erroTxt");
+const statusMsg = document.getElementById("statusMsg");
+
+let totalPedidos = 0;
+
+db.ref("pedidos").once("value").then(snap => {
+  const pedidos = snap.val() || {};
+  totalPedidos = Object.keys(pedidos).length;
+
+  if (totalPedidos === 0) {
+    contadorBox.innerHTML = `<div class="num">0</div><div class="lbl">Nenhum pedido encontrado — banco já está limpo</div>`;
+    return;
+  }
+
+  contadorBox.innerHTML = `<div class="num">${totalPedidos}</div><div class="lbl">pedido(s) cadastrado(s) no banco</div>`;
+  formApagar.style.display = "block";
+}).catch(err => {
+  contadorBox.innerHTML = `<div class="lbl" style="color:var(--danger);">Erro ao consultar: ${err.message}</div>`;
+});
+
+confirmInput.addEventListener("input", () => {
+  btnApagar.disabled = confirmInput.value.trim() !== "APAGAR";
+  erroTxt.textContent = "";
+});
+
+btnApagar.addEventListener("click", async () => {
+  if (confirmInput.value.trim() !== "APAGAR") {
+    erroTxt.textContent = "Digite exatamente APAGAR (maiúsculas) para confirmar.";
+    return;
+  }
+  btnApagar.disabled = true;
+  btnApagar.textContent = "Apagando...";
+  try {
+    await db.ref("pedidos").remove();
+    formApagar.style.display = "none";
+    contadorBox.innerHTML = `<div class="num">0</div><div class="lbl">Pedidos apagados com sucesso</div>`;
+    statusMsg.className = "status ok";
+    statusMsg.textContent = `✅ ${totalPedidos} pedido(s) apagado(s). O banco está limpo — pode começar a operar de verdade.`;
+  } catch (err) {
+    statusMsg.className = "status erro";
+    statusMsg.textContent = "❌ Erro ao apagar: " + err.message;
+    btnApagar.disabled = false;
+    btnApagar.textContent = "Apagar todos os pedidos";
+  }
+});
+</script>
+
+</body>
+</html>
