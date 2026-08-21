@@ -844,6 +844,17 @@ const STATUS_COR = {
 };
 const PAYMENT_LABELS = { pix: "PIX", cartao: "Cartão", boleto: "Boleto", faturado: "Faturado (Pro)", dinheiro: "Dinheiro" };
 
+function calcularPrazoProducao(itens) {
+  const pecasCortadas = (itens || []).filter(it => it.productType === "glass").reduce((s, it) => s + (it.qty || 1), 0);
+  if (pecasCortadas === 0) return { tipo: "horas", texto: "2 a 4 horas" };
+  let dias;
+  if (pecasCortadas <= 6) dias = 2;
+  else if (pecasCortadas <= 15) dias = 3;
+  else if (pecasCortadas <= 25) dias = 4;
+  else dias = 5;
+  return { tipo: "dias", texto: dias + " dia" + (dias > 1 ? "s" : "") + " úteis" };
+}
+
 function proximoStatus(atual) {
   const i = STATUS_ORDER.indexOf(atual);
   return i >= 0 && i + 1 < STATUS_ORDER.length ? STATUS_ORDER[i + 1] : null;
@@ -1018,8 +1029,9 @@ function renderDetalhePedido(order) {
     <div class="det-secao">Pagamento</div>
     <div>${PAYMENT_LABELS[order.payment] || order.payment || "-"}</div>
     ${order.totals?.delivery ? `<div style="font-size:12.5px;color:var(--text-muted);margin-top:4px;">Frete: ${fmtBR(order.totals.delivery)}</div>` : ""}
+    ${order.prazoEstimado?.texto ? `<div style="font-size:12.5px;color:var(--text-muted);margin-top:4px;">Prazo estimado: ${order.prazoEstimado.texto}</div>` : ""}
     <div class="det-total">${fmtBR(order.totals?.total)}</div>
-
+    
     <div class="det-acoes">
       ${prox ? `<button class="btn btn-primario" id="btnAvancar">Avançar para: ${STATUS_LABELS[prox]}</button>` : ""}
       <button class="btn btn-secundario" id="btnImprimir">🖨️ Imprimir ficha</button>
@@ -1527,6 +1539,7 @@ document.getElementById("btnFinalizarVenda").addEventListener("click", () => {
     delivery: estadoVenda.delivery,
     deliveryKm: estadoVenda.delivery === "entrega" ? estadoVenda.deliveryKm : null,
     items: estadoVenda.itens,
+    prazoEstimado: calcularPrazoProducao(estadoVenda.itens),
     totals: { subtotal: subtotalItens, delivery: frete, total },
   };
   db.ref("pedidos/" + id).set(pedido);
