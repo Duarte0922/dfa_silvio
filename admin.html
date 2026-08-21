@@ -1058,10 +1058,7 @@ function renderDetalhePedido(order) {
 
   if (prox) document.getElementById("btnAvancar").addEventListener("click", () => avancarStatus(order.id, prox));
   document.getElementById("btnImprimir").addEventListener("click", () => imprimirComAlvo("detalhePedido"));
-  document.getElementById("btnGerarEtiqueta").addEventListener("click", () => {
-    renderEtiquetaPedido(order);
-    imprimirComAlvo("etiquetaPedido");
-  });
+  document.getElementById("btnGerarEtiqueta").addEventListener("click", () => abrirPreviaEtiqueta(order));
 }
 
 function imprimirComAlvo(elId) {
@@ -1090,6 +1087,26 @@ function renderEtiquetaPedido(order) {
   }).join("");
 }
 
+function abrirPreviaEtiqueta(order) {
+  renderEtiquetaPedido(order);
+  const conteudoEtiquetas = document.getElementById("etiquetaPedido").innerHTML;
+  abrirModal(`
+    <h3>🏷️ Prévia da etiqueta</h3>
+    <p style="font-size:12.5px;color:var(--text-muted);margin-top:-8px;">Confira os dados antes de imprimir. Uma etiqueta é gerada por peça de vidro/espelho do pedido.</p>
+    <div style="background:#F2F1EC;border-radius:8px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:10px;">
+      ${conteudoEtiquetas}
+    </div>
+    <div class="modal-acoes">
+      <button class="btn btn-secundario" id="btnFecharPreviaEtiqueta">Fechar</button>
+      <button class="btn btn-primario" id="btnImprimirEtiquetaAgora">🖨️ Imprimir etiqueta</button>
+    </div>
+  `);
+  document.getElementById("btnFecharPreviaEtiqueta").addEventListener("click", fecharModal);
+  document.getElementById("btnImprimirEtiquetaAgora").addEventListener("click", () => {
+    fecharModal();
+    imprimirComAlvo("etiquetaPedido");
+  });
+}
 function avancarStatus(pid, novoStatus) {
   const agora = new Date().toISOString();
   db.ref("pedidos/" + pid + "/status").set(novoStatus);
