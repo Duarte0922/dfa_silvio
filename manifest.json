@@ -1,0 +1,25 @@
+{
+  "name": "DFA Vidros Silvio",
+  "short_name": "DFA Vidros",
+  "description": "Faça seu pedido de vidros, espelhos e box sob medida",
+  "start_url": "vidracaria-app.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#FAFAF8",
+  "theme_color": "#1B6B3C",
+  "icons": [
+    {
+      "src": "icons/icon-cliente-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-cliente-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
