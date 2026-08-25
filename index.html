@@ -1031,6 +1031,12 @@
   padding: 11px; border-radius: 8px; font-weight: 700; cursor: pointer;
 }
 </style>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1B6B3C">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="DFA Vidros">
+<link rel="apple-touch-icon" href="icon-cliente-192.png">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
@@ -3130,6 +3136,12 @@ renderVidros();
 renderAcessoriosTopo();
 renderPagamento();
 atualizarTudo();
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(err => console.warn('SW falhou:', err));
+  });
+}
 </script>
 </body>
 </html>
