@@ -843,6 +843,20 @@
   .ma-qtd-btn:hover { border-color: var(--accent); }
   .ma-qtd-val { min-width: 30px; text-align: center; font-weight: 700; font-size: 18px; }
 
+  /* ===== Beneficiamento (acabamento de corte) dentro do modal de produto ===== */
+  .mp-benef-row { display: flex; align-items: center; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid var(--border); gap: 10px; }
+  .mp-benef-row:last-child { border-bottom: none; }
+  .mp-benef-nome { font-size: 13.5px; font-weight: 500; }
+  .mp-benef-preco { font-size: 11.5px; color: var(--text-muted); margin-top: 1px; }
+  .mp-benef-qtd { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .mp-benef-qtd button { width: 26px; height: 26px; border-radius: 6px; border: 1.5px solid var(--border); background: var(--bg-card); font-size: 14px; cursor: pointer; }
+  .mp-benef-qtd button:hover { border-color: var(--accent); }
+  .mp-benef-qtd span { min-width: 14px; text-align: center; font-weight: 600; font-size: 13px; }
+  .mp-benef-toggle { flex-shrink: 0; width: 42px; height: 24px; border-radius: 20px; border: 1.5px solid var(--border); background: var(--bg); cursor: pointer; position: relative; transition: background .15s, border-color .15s; }
+  .mp-benef-toggle::after { content: ""; position: absolute; top: 2px; left: 2px; width: 17px; height: 17px; border-radius: 50%; background: var(--text-muted); transition: transform .15s, background .15s; }
+  .mp-benef-toggle.ativo { background: var(--accent); border-color: var(--accent); }
+  .mp-benef-toggle.ativo::after { transform: translateX(18px); background: #fff; }
+
   /* Modal de Pagamento Pix */
   .modal-overlay {
     position: fixed;
@@ -1005,38 +1019,7 @@
 .link-voltar-gate { display: inline-block; margin-top: 10px; font-size: 12.5px; color: var(--text-muted); cursor: pointer; text-decoration: underline; }
 .badge-modo { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 20px; background: var(--accent-light); color: var(--accent-dark); margin-left: 8px; vertical-align: middle; }
 .badge-modo a { color: var(--accent-dark); text-decoration: underline; font-weight: 600; margin-left: 6px; cursor: pointer; }
-
-/* ===== Info das regras de negócio (frete e corte-padrão) ===== */
-.btn-info-regra {
-  display: inline-flex; align-items: center; gap: 5px;
-  background: none; border: none; padding: 0; margin-top: 6px;
-  font-size: 11.5px; font-weight: 600; color: var(--accent-dark);
-  text-decoration: underline; cursor: pointer;
-}
-.btn-info-regra .bolha-i {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 15px; height: 15px; border-radius: 50%;
-  background: var(--accent); color: #fff; font-size: 10px; font-weight: 800;
-  text-decoration: none; flex-shrink: 0;
-}
-.modal-content-regra {
-  background: var(--bg-card); border-radius: var(--radius); padding: 22px;
-  max-width: 420px; width: 100%; text-align: left; box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-}
-.modal-content-regra h3 { margin: 0 0 10px; font-size: 16px; color: var(--accent-dark); }
-.modal-content-regra p { font-size: 13.5px; color: var(--text); margin: 0 0 10px; line-height: 1.5; }
-.modal-content-regra p strong { color: var(--accent-dark); }
-.modal-content-regra .btn-fechar {
-  margin-top: 6px; width: 100%; background: var(--accent); color: #fff; border: none;
-  padding: 11px; border-radius: 8px; font-weight: 700; cursor: pointer;
-}
 </style>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#1B6B3C">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="DFA Vidros">
-<link rel="apple-touch-icon" href="icon-cliente-192.png">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
@@ -1227,7 +1210,6 @@
         <div class="desc">Frete por km rodado</div>
       </div>
     </div>
-    <button type="button" class="btn-info-regra" id="btnInfoFrete"><span class="bolha-i">i</span> Por que cobramos frete?</button>
 
     <div id="blocoEnderecoEntrega" style="display:none;">
       <div class="campo">
@@ -1309,15 +1291,6 @@
   </div>
 </div>
 
-<!-- Modal de regras (frete / corte-padrão) -->
-<div class="modal-overlay" id="modalInfoRegra">
-  <div class="modal-content-regra">
-    <h3 id="infoRegraTitulo">Título</h3>
-    <div id="infoRegraCorpo"></div>
-    <button class="btn-fechar" id="btnFecharInfoRegra">Entendi</button>
-  </div>
-</div>
-
 <!-- Modal de configuração do produto -->
 <div class="modal-produto-overlay" id="modalProduto">
   <div class="modal-produto-caixa" style="position:relative;">
@@ -1352,12 +1325,17 @@
     </div>
     <div class="mp-preview-legenda" id="mpPreviewLegenda">Digite a medida pra ver a prévia</div>
 
+    <div class="mp-benef-wrap" id="mpBenefWrap" style="display:none;">
+      <div style="font-weight:700;font-size:13.5px;margin:16px 0 4px;">Acabamento de corte (opcional)</div>
+      <div style="font-size:11.5px;color:var(--text-muted);margin-bottom:10px;">Quer cava, furo ou um formato especial nessa peça? Escolha abaixo.</div>
+      <div id="mpBenefList"></div>
+    </div>
+
     <div class="modal-produto-preco-preview">
       <span>Subtotal deste item</span>
       <span class="valor" id="mpSubtotalPreview">R$ 0,00</span>
     </div>
     <div id="mpAvisoCobranca" style="font-size:11px;color:var(--text-muted);margin-top:6px;text-align:center;"></div>
-    <button type="button" class="btn-info-regra" id="btnInfoCorte" style="display:block;margin:6px auto 0;"><span class="bolha-i">i</span> Por que esse valor?</button>
 
     <button class="btn-add-carrinho" id="btnAddCarrinho" disabled>+ Adicionar ao carrinho</button>
   </div>
@@ -1419,38 +1397,6 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
-
-/* =========================================================
-   MODAL DE REGRAS (frete / corte-padrão)
-   ========================================================= */
-const TEXTOS_INFO_REGRA = {
-  frete: {
-    titulo: "🚚 Sobre o frete",
-    corpo: `<p>O frete é calculado pela distância até o seu endereço (ida e volta do veículo).</p>
-            <p>Vidro exige transporte especializado — evitamos frete terceirizado para garantir que a peça chegue <strong>sem trincar ou quebrar</strong> no caminho.</p>`
-  },
-  corte: {
-    titulo: "📐 Sobre a medida cobrada",
-    corpo: `<p>Vidros são cortados em <strong>módulos-padrão de fábrica</strong> para evitar desperdício de chapa — prática comum em todo o setor (vidro, madeira, metal).</p>
-            <p><strong>Sua peça é cortada exatamente na medida que você pediu.</strong> Apenas o valor cobrado usa o módulo comercial mais próximo, e nunca um módulo menor que o solicitado.</p>`
-  }
-};
-
-function abrirInfoRegra(tipo) {
-  const info = TEXTOS_INFO_REGRA[tipo];
-  if (!info) return;
-  document.getElementById("infoRegraTitulo").textContent = info.titulo;
-  document.getElementById("infoRegraCorpo").innerHTML = info.corpo;
-  document.getElementById("modalInfoRegra").classList.add("ativo");
-}
-document.getElementById("btnInfoFrete").addEventListener("click", () => abrirInfoRegra("frete"));
-document.getElementById("btnInfoCorte").addEventListener("click", () => abrirInfoRegra("corte"));
-document.getElementById("btnFecharInfoRegra").addEventListener("click", () => {
-  document.getElementById("modalInfoRegra").classList.remove("ativo");
-});
-document.getElementById("modalInfoRegra").addEventListener("click", (e) => {
-  if (e.target.id === "modalInfoRegra") document.getElementById("modalInfoRegra").classList.remove("ativo");
-});
 
 /* =========================================================
    MODO CONSUMIDOR / PROFISSIONAL
@@ -1648,7 +1594,7 @@ const PRODUTOS_DESTAQUE = [
   { id: "box-frontal",    nome: "Box Frontal",     preco_m2: 370.00, espessura_mm: 8, img: "img/box-frontal.jpg",    tarja: "Sob medida", cor: "azul", min_mm: 50 },
   { id: "box-teto",       nome: "Box Teto",        preco_m2: 500.00, espessura_mm: 8, img: "img/box-teto.jpg",       tarja: "Premium",    cor: "rosa", min_mm: 50 },
   { id: "espelho-comum",  nome: "Espelho Comum",   preco_m2: 130.00, espessura_mm: 4, img: "img/espelho-comum.jpg",  tarja: "Popular",    cor: "verde", min_mm: 50, codigo_catalogo: "EP04" },
-  { id: "espelho-decorativo", nome: "Espelho Decorativo", preco_m2: 220.00, espessura_mm: 4, img: "img/espelho-decorativo.jpg", tarja: "Decorativo", cor: "rosa", min_mm: 50, codigo_catalogo: "EP04B" },
+  { id: "espelho-decorativo", nome: "Espelho Decorativo", preco_m2: 220.00, espessura_mm: 4, img: "img/espelho-decorativo.jpg", tarja: "Decorativo", cor: "rosa", min_mm: 50, codigo_catalogo: null },
   { id: "espelho-lapidado", nome: "Espelho Lapidado", preco_m2: 180.00, espessura_mm: 4, img: "img/espelho-lapidado.jpg", tarja: "Acabamento fino", cor: "turquesa", min_mm: 50, codigo_catalogo: "EP04L" },
   { id: "espelho-sob-medida", nome: "Espelho Sob Medida", preco_m2: 200.00, espessura_mm: 4, img: "img/espelho-sob-medida.jpg", tarja: "Sob medida", cor: "azul", min_mm: 50, codigo_catalogo: null },
   { id: "guarda-corpo",   nome: "Guarda-Corpo",    preco_m2: 340.00, espessura_mm: 10, img: "img/guarda-corpo.jpg", tarja: "Segurança",  cor: "laranja", min_mm: 50 }
@@ -1665,6 +1611,26 @@ const ACESSORIOS = [
   { id: "silicone",         nome: "Silicone",           preco_unit: 18.00, img: "img/silicone.jpg" },
   { id: "vedacao",          nome: "Vedação",            preco_unit: 15.00, img: "img/vedacao.jpg" },
   { id: "fechamento-pia",   nome: "Fechamento de Pia",  preco_unit: 60.00, img: "img/fechamento-pia.jpg" }
+];
+
+// Beneficiamentos: acabamentos de corte que o cliente escolhe por peça de vidro,
+// dentro do modal de produto. "fixo_un" cobra por unidade (furo, canto — pode
+// pedir mais de um). "fixo_peca" cobra uma vez pra peça inteira (cava, bojo).
+// "percentual" aplica um adicional em cima do subtotal daquela peça (formato,
+// não quantidade — por isso funciona como toggle, não contador).
+const BENEFICIAMENTOS = [
+  { id: "cava",          nome: "Cava / Recorte",     tipo: "fixo_peca",  preco: 50.00 },
+  { id: "bojo",          nome: "Bojo",                tipo: "fixo_peca",  preco: 200.00 },
+  { id: "furo8",         nome: "Furo até 8mm",        tipo: "fixo_un",    preco: 6.00 },
+  { id: "furo120",       nome: "Furo até 120mm",      tipo: "fixo_un",    preco: 12.00 },
+  { id: "canto_lapis",   nome: "Canto Lápis",         tipo: "fixo_un",    preco: 5.00 },
+  { id: "canto_moeda",   nome: "Canto Moeda",         tipo: "fixo_un",    preco: 5.00 },
+  { id: "canto_copo",    nome: "Canto Copo",          tipo: "fixo_un",    preco: 9.00 },
+  { id: "canto_molde",   nome: "Canto Molde",         tipo: "fixo_un",    preco: 9.00 },
+  { id: "painel",        nome: "Painel",              tipo: "percentual", pct: 0.20 },
+  { id: "fora_esquadro", nome: "Fora do Esquadro",    tipo: "percentual", pct: 0.05 },
+  { id: "redondo",       nome: "Redondo",             tipo: "percentual", pct: 0.10 },
+  { id: "molde",         nome: "Molde / Orgânico",    tipo: "percentual", pct: 0.30 }
 ];
 
 /* =========================================================
@@ -1694,7 +1660,8 @@ const modalProdutoEstado = {
   altura: 0,
   largura: 0,
   erroAltura: "",
-  erroLargura: ""
+  erroLargura: "",
+  beneficiamentos: {} // { id: quantidade (fixo_un) | 1/0 (fixo_peca e percentual) }
 };
 
 const FORMAS_PAGAMENTO = [
@@ -2013,6 +1980,7 @@ function abrirModalProduto(produto) {
   modalProdutoEstado.largura = 0;
   modalProdutoEstado.erroAltura = "";
   modalProdutoEstado.erroLargura = "";
+  modalProdutoEstado.beneficiamentos = {};
 
   document.getElementById("mpImg").src = produto.img;
   document.getElementById("mpNome").textContent = produto.nome;
@@ -2092,9 +2060,88 @@ function validarModalMedidas() {
   avL.classList.toggle("visivel", !!modalProdutoEstado.erroLargura);
 }
 
+// Extra em R$ de todos os beneficiamentos escolhidos pra essa peça. Os
+// percentuais incidem sobre o subtotal do VIDRO (sem os fixos), igual à
+// lógica de "% do valor do produto" que o Silvio passou.
+function calcularExtraBeneficiamentos(subtotalVidro) {
+  let extra = 0;
+  BENEFICIAMENTOS.forEach(b => {
+    const v = modalProdutoEstado.beneficiamentos[b.id] || 0;
+    if (v <= 0) return;
+    if (b.tipo === "fixo_un") extra += v * b.preco;
+    else if (b.tipo === "fixo_peca") extra += b.preco;
+    else if (b.tipo === "percentual") extra += subtotalVidro * b.pct;
+  });
+  return extra;
+}
+
+function renderBeneficiamentosModal() {
+  const wrap = document.getElementById("mpBenefWrap");
+  const list = document.getElementById("mpBenefList");
+  if (!wrap || !list) return;
+
+  const temMedida = modalProdutoEstado.altura > 0 && modalProdutoEstado.largura > 0
+    && !modalProdutoEstado.erroAltura && !modalProdutoEstado.erroLargura;
+  wrap.style.display = temMedida ? "block" : "none";
+  if (!temMedida) return;
+
+  list.innerHTML = BENEFICIAMENTOS.map(b => {
+    const atual = modalProdutoEstado.beneficiamentos[b.id] || 0;
+    if (b.tipo === "percentual") {
+      return `<div class="mp-benef-row">
+        <div>
+          <div class="mp-benef-nome">${b.nome}</div>
+          <div class="mp-benef-preco">+${(b.pct * 100).toFixed(0)}% do valor da peça</div>
+        </div>
+        <button type="button" class="mp-benef-toggle ${atual ? 'ativo' : ''}" data-benid="${b.id}" data-beftipo="toggle" aria-label="${b.nome}"></button>
+      </div>`;
+    }
+    const precoTxt = b.tipo === "fixo_peca" ? `R$ ${b.preco.toFixed(2)} / peça` : `R$ ${b.preco.toFixed(2)} cada`;
+    if (b.tipo === "fixo_peca") {
+      return `<div class="mp-benef-row">
+        <div>
+          <div class="mp-benef-nome">${b.nome}</div>
+          <div class="mp-benef-preco">${precoTxt}</div>
+        </div>
+        <button type="button" class="mp-benef-toggle ${atual ? 'ativo' : ''}" data-benid="${b.id}" data-beftipo="toggle" aria-label="${b.nome}"></button>
+      </div>`;
+    }
+    return `<div class="mp-benef-row">
+      <div>
+        <div class="mp-benef-nome">${b.nome}</div>
+        <div class="mp-benef-preco">${precoTxt}</div>
+      </div>
+      <div class="mp-benef-qtd">
+        <button type="button" data-benid="${b.id}" data-beftipo="menos">−</button>
+        <span>${atual}</span>
+        <button type="button" data-benid="${b.id}" data-beftipo="mais">+</button>
+      </div>
+    </div>`;
+  }).join("");
+
+  list.querySelectorAll("[data-beftipo='toggle']").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.benid;
+      modalProdutoEstado.beneficiamentos[id] = modalProdutoEstado.beneficiamentos[id] ? 0 : 1;
+      renderBeneficiamentosModal();
+      atualizarModalProduto();
+    });
+  });
+  list.querySelectorAll("[data-beftipo='mais'], [data-beftipo='menos']").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.benid;
+      const atualQ = modalProdutoEstado.beneficiamentos[id] || 0;
+      modalProdutoEstado.beneficiamentos[id] = btn.dataset.beftipo === "mais" ? atualQ + 1 : Math.max(0, atualQ - 1);
+      renderBeneficiamentosModal();
+      atualizarModalProduto();
+    });
+  });
+}
+
 function atualizarModalProduto() {
   validarModalMedidas();
   desenharMiniVidro(modalProdutoEstado.altura, modalProdutoEstado.largura);
+  renderBeneficiamentosModal();
 
   const valido = modalProdutoEstado.produto && modalProdutoEstado.altura > 0 && modalProdutoEstado.largura > 0
     && !modalProdutoEstado.erroAltura && !modalProdutoEstado.erroLargura;
@@ -2105,7 +2152,8 @@ function atualizarModalProduto() {
     const alturaCobranca = medidaCobranca(modalProdutoEstado.altura, minMm);
     const larguraCobranca = medidaCobranca(modalProdutoEstado.largura, minMm);
     const areaM2Cobranca = (alturaCobranca / 1000) * (larguraCobranca / 1000);
-    subtotal = areaM2Cobranca * modalProdutoEstado.produto.preco_m2;
+    const subtotalVidro = areaM2Cobranca * modalProdutoEstado.produto.preco_m2;
+    subtotal = subtotalVidro + calcularExtraBeneficiamentos(subtotalVidro);
   }
   document.getElementById("mpSubtotalPreview").textContent = "R$ " + subtotal.toFixed(2).replace(".", ",");
   document.getElementById("btnAddCarrinho").disabled = !valido;
@@ -2140,6 +2188,22 @@ document.getElementById("btnAddCarrinho").addEventListener("click", () => {
   const alturaCobranca = medidaCobranca(modalProdutoEstado.altura, minMm);
   const larguraCobranca = medidaCobranca(modalProdutoEstado.largura, minMm);
   const areaM2Cobranca = (alturaCobranca / 1000) * (larguraCobranca / 1000);
+  const subtotalVidro = areaM2Cobranca * p.preco_m2;
+  const extraBeneficiamentos = calcularExtraBeneficiamentos(subtotalVidro);
+
+  // guarda só os beneficiamentos que o cliente de fato escolheu (qtd/toggle > 0),
+  // pra aparecer certo no resumo, no admin e na etiqueta de produção
+  const beneficiamentosEscolhidos = BENEFICIAMENTOS
+    .filter(b => (modalProdutoEstado.beneficiamentos[b.id] || 0) > 0)
+    .map(b => ({
+      id: b.id,
+      nome: b.nome,
+      qtd: modalProdutoEstado.beneficiamentos[b.id],
+      tipo: b.tipo,
+      valor: b.tipo === "fixo_un" ? modalProdutoEstado.beneficiamentos[b.id] * b.preco
+           : b.tipo === "fixo_peca" ? b.preco
+           : subtotalVidro * b.pct
+    }));
 
   estado.carrinho.push({
     id: "ci_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
@@ -2152,12 +2216,15 @@ document.getElementById("btnAddCarrinho").addEventListener("click", () => {
       height: modalProdutoEstado.altura,   // medida de CORTE real — não arredondar
       billedWidth: larguraCobranca,        // medida usada na cobrança
       billedHeight: alturaCobranca,        // medida usada na cobrança
-      thickness: p.espessura_mm, color: "incolor", finish: "", cuts: 0, holes: 0
+      thickness: p.espessura_mm, color: "incolor", finish: "",
+      cuts: beneficiamentosEscolhidos.filter(b => b.tipo !== "fixo_un" || b.id.startsWith("furo") === false).length,
+      holes: (modalProdutoEstado.beneficiamentos.furo8 || 0) + (modalProdutoEstado.beneficiamentos.furo120 || 0),
+      beneficiamentos: beneficiamentosEscolhidos
     },
     unit: "m2",
     qty: 1,
     area_m2: areaM2Cobranca,
-    subtotal: areaM2Cobranca * p.preco_m2,
+    subtotal: subtotalVidro + extraBeneficiamentos,
     selecionado: true
   });
   fecharModalProduto();
@@ -2576,7 +2643,9 @@ function calcularPreco() {
 
   estado.carrinho.filter(it => it.selecionado).forEach(it => {
     total += it.subtotal;
-    linhas.push({ tipo: "carrinho", id: it.id, texto: `${it.productName} — ${it.config.width}mm × ${it.config.height}mm (${it.area_m2.toFixed(2)} m²): R$ ${it.subtotal.toFixed(2)}` });
+    const benef = it.config.beneficiamentos || [];
+    const benefTxt = benef.length ? ` — ${benef.map(b => b.tipo === "fixo_un" ? `${b.nome} x${b.qtd}` : b.nome).join(", ")}` : "";
+    linhas.push({ tipo: "carrinho", id: it.id, texto: `${it.productName} — ${it.config.width}mm × ${it.config.height}mm (${it.area_m2.toFixed(2)} m²)${benefTxt}: R$ ${it.subtotal.toFixed(2)}` });
   });
 
   ACESSORIOS.forEach(a => {
@@ -3136,12 +3205,6 @@ renderVidros();
 renderAcessoriosTopo();
 renderPagamento();
 atualizarTudo();
-
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch(err => console.warn('SW falhou:', err));
-  });
-}
 </script>
 </body>
 </html>
