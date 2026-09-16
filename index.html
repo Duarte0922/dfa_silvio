@@ -1325,6 +1325,11 @@
     </div>
     <div class="mp-preview-legenda" id="mpPreviewLegenda">Digite a medida pra ver a prévia</div>
 
+    <div class="mp-benef-wrap" id="mpComposicaoBoxWrap" style="display:none;">
+      <div style="font-weight:700;font-size:13.5px;margin:16px 0 4px;">Composição do Box</div>
+      <div id="mpComposicaoBoxTexto" style="font-size:13px;color:var(--text);background:var(--accent-light);border-radius:8px;padding:10px 12px;line-height:1.6;"></div>
+    </div>
+
     <div class="mp-benef-wrap" id="mpBenefWrap" style="display:none;">
       <div style="font-weight:700;font-size:13.5px;margin:16px 0 4px;">Acabamento de corte (opcional)</div>
       <div style="font-size:11.5px;color:var(--text-muted);margin-bottom:10px;">Quer cava, furo ou um formato especial nessa peça? Escolha abaixo.</div>
@@ -1336,6 +1341,8 @@
       <div style="font-size:11.5px;color:var(--text-muted);margin-bottom:10px;">O padrão já vem incluso no preço. Trocar o vidro pode aumentar o valor — a diferença aparece separada.</div>
       <div id="mpVidroBoxList"></div>
     </div>
+
+    <div class="mp-benef-wrap" id="mpLadoBoxWrap" style="display:none;">
 
     <div class="mp-benef-wrap" id="mpLadoBoxWrap" style="display:none;">
       <div style="font-weight:700;font-size:13.5px;margin:16px 0 4px;">Lado da porta</div>
@@ -1581,8 +1588,8 @@ document.getElementById("btnEntrarComCodigo").addEventListener("click", async ()
 
 // DADOS DO PIX (Estático)
 const DADOS_PIX = {
-  chave: "04125749698",
-  nome: "luciano de Melo Duarte",
+  chave: "silviobguimaraes@gmail.com",
+  nome: "SILVIO GUIMARAES VIDROS LTDA",
   cidade: "Belo Horizonte"
 };
 
@@ -1687,6 +1694,15 @@ const modalProdutoEstado = {
 // Usa sempre o vidro temperado mais barato do catálogo como referência "0".
 const CODIGO_VIDRO_BOX_REFERENCIA = "I06T";
 
+const TRANSPASSE_BOX_MM = 50; // 5cm — confirmar com Silvio se vale pra todos os modelos
+
+function calcularComposicaoBox(vaoLarguraMm) {
+  if (!vaoLarguraMm || vaoLarguraMm <= 0) return null;
+  const fixo = Math.round(vaoLarguraMm / 2);
+  const porta = fixo + TRANSPASSE_BOX_MM;
+  return { fixo, porta, larguraTotal: fixo + porta };
+}
+
 function opcoesVidroBox() {
   return Object.values(catalogoFirebase)
     .filter(item => item.categoria === "temperado")
@@ -1714,10 +1730,7 @@ function renderCarrossel() {
       <div class="preco-partir">a partir de <strong>R$ ${p.preco_m2.toFixed(2)}</strong>/m²</div>
       <div class="comprar">Comprar este →</div>
     `;
-    item.addEventListener("click", () => {
-      if (p.id.startsWith("box-")) abrirModalProduto(p);
-      else selecionarProdutoCarrossel(p);
-    });
+    item.addEventListener("click", () => abrirModalProduto(p));
     carrosselTrack.appendChild(item);
   });
 }
@@ -1774,18 +1787,14 @@ function renderModalEspelhos() {
 }
 
 function escolherEspelho(produto) {
-  const med = ESPELHOS_MEDIDA_PADRAO[produto.id] || { altura: 600, largura: 500 };
-  selecionarProdutoCarrossel(produto);
-
-  estado.altura = med.altura;
-  estado.largura = med.largura;
-  document.getElementById("inputAltura").value = med.altura;
-  document.getElementById("inputLargura").value = med.largura;
-
   modalEspelhos.classList.remove("ativo");
-  validarMedidas();
-  atualizarTudo();
-  document.getElementById("inputAltura").scrollIntoView({ behavior: "smooth", block: "center" });
+  abrirModalProduto(produto);
+  const med = ESPELHOS_MEDIDA_PADRAO[produto.id] || { altura: 600, largura: 500 };
+  modalProdutoEstado.altura = med.altura;
+  modalProdutoEstado.largura = med.largura;
+  document.getElementById("mpAltura").value = med.altura;
+  document.getElementById("mpLargura").value = med.largura;
+  atualizarModalProduto();
 }
 
 document.getElementById("btnAbrirEspelhos").addEventListener("click", () => {
@@ -1976,11 +1985,10 @@ function renderRecomendados() {
       <div class="info">
         <div class="nome">${p.nome}</div>
         <div class="preco-linha">a partir de <strong>R$ ${p.preco_m2.toFixed(2)}</strong>/m²</div>
-        <button class="btn-quero" type="button">Quero este</button>
+        <button class="btn-quero" type="button">Comprar este</button>
       </div>
     `;
-    card.querySelector(".btn-quero").addEventListener("click", (ev) => { ev.stopPropagation(); mostrarAvisoRecom(); });
-    card.addEventListener("click", () => mostrarAvisoRecom());
+    card.addEventListener("click", () => abrirModalProduto(p));
     recomTrack.appendChild(card);
   });
 }
@@ -2020,6 +2028,8 @@ function abrirModalProduto(produto) {
   document.getElementById("mpImg").style.cursor = "zoom-in";
   document.getElementById("mpNome").textContent = produto.nome;
   document.getElementById("mpPrecoM2").textContent = `R$ ${produto.preco_m2.toFixed(2)} / m² · Espessura ${produto.espessura_mm}mm`;
+  const ehBoxAbre = produto.id && produto.id.startsWith("box-");
+  document.querySelector('label[for="mpLargura"]').textContent = ehBoxAbre ? "Largura do vão (mm) *" : "Largura (mm) *";
   document.getElementById("mpAltura").value = "";
   document.getElementById("mpLargura").value = "";
   document.getElementById("mpAvisoAltura").classList.remove("visivel");
@@ -2191,6 +2201,22 @@ document.getElementById("mpLadoDireita").addEventListener("click", () => {
   renderLadoBoxModal();
 });
 
+function renderComposicaoBoxModal() {
+  const wrap = document.getElementById("mpComposicaoBoxWrap");
+  const texto = document.getElementById("mpComposicaoBoxTexto");
+  const ehBox = modalProdutoEstado.produto && modalProdutoEstado.produto.id && modalProdutoEstado.produto.id.startsWith("box-");
+  const temMedida = modalProdutoEstado.altura > 0 && modalProdutoEstado.largura > 0
+    && !modalProdutoEstado.erroAltura && !modalProdutoEstado.erroLargura;
+  wrap.style.display = (ehBox && temMedida) ? "block" : "none";
+  if (!ehBox || !temMedida) return;
+
+  const comp = calcularComposicaoBox(modalProdutoEstado.largura);
+  const ladoTxt = modalProdutoEstado.ladoAberturaBox === "esquerda" ? "esquerda" : "direita";
+  texto.innerHTML = `Vão informado: <strong>${modalProdutoEstado.largura}mm</strong><br>
+    Parte fixa: <strong>${comp.fixo}mm</strong> · Porta (${ladoTxt}): <strong>${comp.porta}mm</strong><br>
+    Largura de vidro usada no corte: <strong>${comp.larguraTotal}mm</strong> (inclui ${TRANSPASSE_BOX_MM}mm de transpasse)`;
+}
+
 function renderBeneficiamentosModal() {
   const wrap = document.getElementById("mpBenefWrap");
   const list = document.getElementById("mpBenefList");
@@ -2260,6 +2286,7 @@ function atualizarModalProduto() {
   renderBeneficiamentosModal();
   renderVidroBoxModal();
   renderLadoBoxModal();
+  renderComposicaoBoxModal();
 
   const valido = modalProdutoEstado.produto && modalProdutoEstado.altura > 0 && modalProdutoEstado.largura > 0
     && !modalProdutoEstado.erroAltura && !modalProdutoEstado.erroLargura;
@@ -2267,8 +2294,12 @@ function atualizarModalProduto() {
   let subtotal = 0;
   if (valido) {
     const minMm = modalProdutoEstado.produto.min_mm;
+    const ehBoxCalc = modalProdutoEstado.produto.id.startsWith("box-");
+    const larguraParaCobranca = ehBoxCalc
+      ? calcularComposicaoBox(modalProdutoEstado.largura).larguraTotal
+      : modalProdutoEstado.largura;
     const alturaCobranca = medidaCobranca(modalProdutoEstado.altura, minMm);
-    const larguraCobranca = medidaCobranca(modalProdutoEstado.largura, minMm);
+    const larguraCobranca = medidaCobranca(larguraParaCobranca, minMm);
     const areaM2Cobranca = (alturaCobranca / 1000) * (larguraCobranca / 1000);
     const subtotalVidro = areaM2Cobranca * modalProdutoEstado.produto.preco_m2;
     const extraBox = areaM2Cobranca * diferencaVidroBox();
@@ -2280,10 +2311,16 @@ function atualizarModalProduto() {
   const avisoCobranca = document.getElementById("mpAvisoCobranca");
   if (valido) {
     const minMm = modalProdutoEstado.produto.min_mm;
+    const ehBoxCalc2 = modalProdutoEstado.produto.id.startsWith("box-");
+    const larguraParaCobranca2 = ehBoxCalc2
+      ? calcularComposicaoBox(modalProdutoEstado.largura).larguraTotal
+      : modalProdutoEstado.largura;
     const ac = medidaCobranca(modalProdutoEstado.altura, minMm);
-    const lc = medidaCobranca(modalProdutoEstado.largura, minMm);
-    if (ac !== modalProdutoEstado.altura || lc !== modalProdutoEstado.largura) {
-      avisoCobranca.textContent = `Corte na medida exata (${modalProdutoEstado.largura}×${modalProdutoEstado.altura}mm) — cobrança calculada como ${lc}×${ac}mm`;
+    const lc = medidaCobranca(larguraParaCobranca2, minMm);
+    if (ac !== modalProdutoEstado.altura || lc !== larguraParaCobranca2) {
+      avisoCobranca.textContent = ehBoxCalc2
+        ? `Vão de ${modalProdutoEstado.largura}mm — cobrança calculada como ${lc}×${ac}mm (largura já soma fixo+porta)`
+        : `Corte na medida exata (${modalProdutoEstado.largura}×${modalProdutoEstado.altura}mm) — cobrança calculada como ${lc}×${ac}mm`;
     } else {
       avisoCobranca.textContent = "";
     }
@@ -2304,8 +2341,11 @@ document.getElementById("mpLargura").addEventListener("input", (e) => {
 document.getElementById("btnAddCarrinho").addEventListener("click", () => {
   const p = modalProdutoEstado.produto;
   const minMm = p.min_mm;
+  const ehBoxAdd = p.id.startsWith("box-");
+  const composicaoBox = ehBoxAdd ? calcularComposicaoBox(modalProdutoEstado.largura) : null;
+  const larguraParaCobranca = ehBoxAdd ? composicaoBox.larguraTotal : modalProdutoEstado.largura;
   const alturaCobranca = medidaCobranca(modalProdutoEstado.altura, minMm);
-  const larguraCobranca = medidaCobranca(modalProdutoEstado.largura, minMm);
+  const larguraCobranca = medidaCobranca(larguraParaCobranca, minMm);
   const areaM2Cobranca = (alturaCobranca / 1000) * (larguraCobranca / 1000);
   const subtotalVidro = areaM2Cobranca * p.preco_m2;
   const extraBeneficiamentos = calcularExtraBeneficiamentos(subtotalVidro);
@@ -2348,6 +2388,7 @@ document.getElementById("btnAddCarrinho").addEventListener("click", () => {
       billedHeight: alturaCobranca,        // medida usada na cobrança
       thickness: p.espessura_mm, color: "incolor", finish: "",
       side: ehBoxItem ? modalProdutoEstado.ladoAberturaBox : undefined,
+      composicaoBox: composicaoBox,
       cuts: beneficiamentosEscolhidos.filter(b => b.tipo !== "fixo_un" || b.id.startsWith("furo") === false).length,
       holes: (modalProdutoEstado.beneficiamentos.furo8 || 0) + (modalProdutoEstado.beneficiamentos.furo120 || 0),
       beneficiamentos: beneficiamentosEscolhidos,
