@@ -942,7 +942,7 @@ function renderDashboard() {
   const total = lista.length;
   const emProducao = lista.filter(p => p.status === "em_producao").length;
   const prontos = lista.filter(p => p.status === "pronto").length;
-  const faturamento = lista.reduce((s, p) => s + (p.totals?.total || 0), 0);
+  const faturamento = lista.filter(p => p.payStatus !== "aguardando").reduce((s, p) => s + (p.totals?.total || 0), 0);
   const clientesN = new Set(lista.map(p => p.phone).filter(Boolean)).size;
 
   document.getElementById("mTotal").textContent = total;
@@ -996,7 +996,7 @@ function renderListaPedidos() {
           <span class="badge-status" style="background:${STATUS_COR[p.status] || '#999'}">${STATUS_LABELS[p.status] || p.status}</span>
         </div>
         <div class="cliente">${p.name || "-"}</div>
-        <div class="hora">${fmtHora(p.date)}</div>
+        <div class="hora">${fmtHora(p.date)} ${seloPagamento(p)}</div>
       </div>`).join("")
     : `<div style="padding:20px;color:var(--text-muted);text-align:center;font-size:13px;">Nenhum pedido encontrado</div>`;
 
@@ -1044,12 +1044,15 @@ function renderDetalhePedido(order) {
     ${itensHtml || '<div style="color:var(--text-muted);font-size:13px;">Sem itens</div>'}
 
     <div class="det-secao">Pagamento</div>
-    <div>${PAYMENT_LABELS[order.payment] || order.payment || "-"}</div>
+    <div>${PAYMENT_LABELS[order.payment] || order.payment || "-"} ${seloPagamento(order)}</div>
+    ${order.payConfirmadoEm ? `<div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Confirmado em ${fmtHora(order.payConfirmadoEm)}${order.payConfirmadoPor ? " por " + order.payConfirmadoPor : ""}</div>` : ""}
+    ${order.liberadoSemPagamento ? `<div style="font-size:12px;color:var(--danger);margin-top:2px;">Liberado pra produção sem pagamento por ${order.liberadoSemPagamento.por}</div>` : ""}
     ${order.totals?.delivery ? `<div style="font-size:12.5px;color:var(--text-muted);margin-top:4px;">Frete: ${fmtBR(order.totals.delivery)}</div>` : ""}
     ${order.prazoEstimado?.texto ? `<div style="font-size:12.5px;color:var(--text-muted);margin-top:4px;">Prazo estimado: ${order.prazoEstimado.texto}</div>` : ""}
     <div class="det-total">${fmtBR(order.totals?.total)}</div>
     
     <div class="det-acoes">
+      ${(order.payStatus === "aguardando" || order.payStatus === "pagar_no_local") ? `<button class="btn btn-primario" id="btnConfirmarPagto" style="background:var(--amarelo);">✅ Confirmar pagamento</button>` : ""}
       ${prox ? `<button class="btn btn-primario" id="btnAvancar">Avançar para: ${STATUS_LABELS[prox]}</button>` : ""}
       <button class="btn btn-secundario" id="btnImprimir">🖨️ Imprimir ficha</button>
       <button class="btn btn-secundario" id="btnGerarEtiqueta">🏷️ Gerar etiqueta</button>
@@ -1057,6 +1060,8 @@ function renderDetalhePedido(order) {
   `;
 
   if (prox) document.getElementById("btnAvancar").addEventListener("click", () => avancarStatus(order.id, prox));
+  const btnPagto = document.getElementById("btnConfirmarPagto");
+  if (btnPagto) btnPagto.addEventListener("click", () => confirmarPagamento(order.id));
   document.getElementById("btnImprimir").addEventListener("click", () => imprimirComAlvo("detalhePedido"));
   document.getElementById("btnGerarEtiqueta").addEventListener("click", () => abrirPreviaEtiqueta(order));
 }
@@ -1107,7 +1112,28 @@ function abrirPreviaEtiqueta(order) {
     imprimirComAlvo("etiquetaPedido");
   });
 }
+function confirmarPagamento(pid) {
+  db.ref("pedidos/" + pid).update({
+    payStatus: "pago",
+    payConfirmadoEm: new Date().toISOString(),
+    payConfirmadoPor: usuarioAtual ? usuarioAtual.nome : ""
+  });
+}
+
+function seloPagamento(p) {
+  if (p.payStatus === "aguardando") return `<span class="badge-status" style="background:var(--danger);">AGUARDANDO PAGTO</span>`;
+  if (p.payStatus === "pago") return `<span class="badge-status" style="background:var(--accent);">PAGO</span>`;
+  if (p.payStatus === "pagar_no_local") return `<span class="badge-status" style="background:var(--amarelo);">PAGA NO LOCAL</span>`;
+  if (p.payStatus === "faturado") return `<span class="badge-status" style="background:var(--azul);">FATURADO</span>`;
+  return "";
+}
+
 function avancarStatus(pid, novoStatus) {
+  const ped = pedidos[pid];
+  if (novoStatus === "em_producao" && ped && ped.payStatus === "aguardando") {
+    if (!confirm("⚠️ Pagamento ainda NÃO confirmado.\n\nMandar pra produção mesmo assim?")) return;
+    db.ref("pedidos/" + pid + "/liberadoSemPagamento").set({ por: usuarioAtual ? usuarioAtual.nome : "?", at: new Date().toISOString() });
+  }
   const agora = new Date().toISOString();
   db.ref("pedidos/" + pid + "/status").set(novoStatus);
   db.ref("pedidos/" + pid + "/statusHistory").transaction(hist => {
@@ -1601,6 +1627,7 @@ document.getElementById("btnFinalizarVenda").addEventListener("click", () => {
     addr: estadoVenda.delivery === "entrega" ? endereco : "",
     origem: "balcao", status: "recebido", statusHistory: [{ status: "recebido", at: agora }],
     payment: document.getElementById("vPagamento").value,
+    payStatus: document.getElementById("vPagamento").value === "faturado" ? "faturado" : "pago",
     delivery: estadoVenda.delivery,
     deliveryKm: estadoVenda.delivery === "entrega" ? estadoVenda.deliveryKm : null,
     items: estadoVenda.itens,
@@ -1651,6 +1678,7 @@ function renderKanban() {
         <div class="id">${p.id}</div>
         <div class="nome">${p.name || "-"}</div>
         <div class="itens">${resumo}</div>
+        ${seloPagamento(p) ? `<div style="margin-top:6px;">${seloPagamento(p)}</div>` : ""}
         ${prox ? `<button class="btn btn-primario" data-id="${p.id}" data-prox="${prox}">→ ${STATUS_LABELS[prox]}</button>` : ""}
       </div>`;
     }).join("") || `<div class="kanban-vazio">vazio</div>`;
