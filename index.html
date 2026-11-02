@@ -3157,6 +3157,8 @@ async function finalizarPedido() {
     totals: { subtotal: subtotalSemFrete, volumeDiscount: 0, delivery: estado.formaEntrega === "entrega" ? estado.entregaValor : 0, total: total },
     status: "recebido",
     statusHistory: [{ status: "recebido", at: agora }],
+    payMethod: estado.formaPagamento,
+    payStatus: estado.formaPagamento === "dinheiro" ? "pagar_no_local" : "aguardando",
     isPro: false,
     customerId: ""
   };
@@ -3339,6 +3341,7 @@ function cardAcompanhamento(p) {
     <div class="itens-resumo">${(p.items || []).map(i => i.productName).join(", ")}</div>
     <div class="acomp-steps">${stepsHtml}</div>
     <div class="acomp-msg-atual">${msgAtual}</div>
+    ${p.payStatus === "aguardando" ? `<div class="acomp-prazo" style="color:var(--danger);font-weight:600;">⏳ Aguardando confirmação do pagamento</div>` : (p.payStatus === "pago" ? `<div class="acomp-prazo" style="color:var(--accent-dark);font-weight:600;">✅ Pagamento confirmado</div>` : "")}
     ${prazoTxt ? `<div class="acomp-prazo">${prazoTxt}</div>` : ""}
   </div>`;
 }
