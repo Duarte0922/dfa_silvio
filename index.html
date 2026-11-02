@@ -2387,7 +2387,7 @@ document.getElementById("btnAddCarrinho").addEventListener("click", () => {
       billedWidth: larguraCobranca,        // medida usada na cobrança
       billedHeight: alturaCobranca,        // medida usada na cobrança
       thickness: p.espessura_mm, color: "incolor", finish: "",
-      side: ehBoxItem ? modalProdutoEstado.ladoAberturaBox : undefined,
+      side: ehBoxItem ? modalProdutoEstado.ladoAberturaBox : "",
       composicaoBox: composicaoBox,
       cuts: beneficiamentosEscolhidos.filter(b => b.tipo !== "fixo_un" || b.id.startsWith("furo") === false).length,
       holes: (modalProdutoEstado.beneficiamentos.furo8 || 0) + (modalProdutoEstado.beneficiamentos.furo120 || 0),
@@ -3164,7 +3164,7 @@ async function finalizarPedido() {
   };
   localStorage.setItem("dfa_ultimo_telefone", pedido.phone);
   try {
-    await db.ref("pedidos/" + pedido.id).set(pedido);
+    await db.ref("pedidos/" + pedido.id).set(JSON.parse(JSON.stringify(pedido)));
 
     if (estado.formaPagamento === "pix") {
       // GERA PAYLOAD PIX
@@ -3214,7 +3214,7 @@ async function finalizarPedido() {
 
   } catch (err) {
     msgStatus.className = "msg-status erro";
-    msgStatus.textContent = "Não foi possível enviar o pedido. Confira sua conexão e tente de novo.";
+    msgStatus.textContent = "Não foi possível enviar o pedido (" + (err && err.message ? err.message.slice(0, 140) : "erro desconhecido") + "). Tente de novo ou fale no WhatsApp.";
     btnFinalizar.disabled = false;
     btnFinalizar.textContent = "Finalizar pedido";
     console.error(err);
