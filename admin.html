@@ -278,6 +278,23 @@
     <div class="campo"><label>Senha</label><input type="password" id="loginSenha" autocomplete="current-password"></div>
     <button class="btn btn-primario" id="btnEntrar" style="width:100%;">Entrar</button>
     <div class="erro" id="loginErro"></div>
+    <div style="display:flex;justify-content:space-between;margin-top:10px;font-size:12.5px;">
+      <a id="linkAbrirCadastro" style="color:var(--accent-dark);cursor:pointer;text-decoration:underline;">Criar conta</a>
+      <a id="linkEsqueciSenha" style="color:var(--text-muted);cursor:pointer;text-decoration:underline;">Esqueci minha senha</a>
+    </div>
+  </div>
+</div>
+
+<div class="tela-login oculto" id="telaCadastro">
+  <div class="caixa-login">
+    <h2>Criar conta</h2>
+    <div class="sub">Depois de criar, o administrador precisa liberar o seu acesso.</div>
+    <div class="campo"><label>Nome</label><input type="text" id="cadNome"></div>
+    <div class="campo"><label>E-mail</label><input type="email" id="cadEmail"></div>
+    <div class="campo"><label>Senha (mín. 6 caracteres)</label><input type="password" id="cadSenha"></div>
+    <button class="btn btn-primario" id="btnCadastrar" style="width:100%;">Criar conta</button>
+    <div class="erro" id="cadErro"></div>
+    <a id="linkVoltarLogin" style="display:inline-block;margin-top:8px;font-size:12.5px;color:var(--text-muted);cursor:pointer;text-decoration:underline;">‹ Voltar ao login</a>
   </div>
 </div>
 
@@ -514,6 +531,8 @@
         <div><h1>Funcionários</h1><p class="subt">Quem tem acesso ao painel — só o administrador vê essa aba</p></div>
         <button class="btn btn-primario" id="btnNovoFuncionario">+ Novo funcionário</button>
       </div>
+      <h2 class="secao" id="tituloSolicitacoes" style="display:none;">Cadastros aguardando liberação</h2>
+      <div class="pedidos-lista" id="listaSolicitacoes" style="width:100%;margin-bottom:18px;display:none;"></div>
       <div class="pedidos-body">
         <div class="pedidos-lista" id="listaFuncionarios" style="width:100%;"></div>
       </div>
@@ -620,7 +639,7 @@ const ABAS_BLOQUEADAS_NIVEL3 = ["relatorios"];
 const ABAS_SO_ADMIN = ["funcionarios", "configuracoes"];
 
 function mostrarTela(id) {
-  ["telaLogin", "telaBootstrapAdmin", "layoutApp"].forEach(t => {
+  ["telaLogin", "telaCadastro", "telaBootstrapAdmin", "layoutApp"].forEach(t => {
     document.getElementById(t).classList.toggle("oculto", t !== id);
   });
 }
@@ -649,6 +668,50 @@ document.getElementById("btnCriarAdmin").addEventListener("click", async () => {
   }
 });
 
+let ignorarAuthChange = false;
+
+document.getElementById("linkAbrirCadastro").addEventListener("click", () => {
+  document.getElementById("cadErro").textContent = "";
+  mostrarTela("telaCadastro");
+});
+document.getElementById("linkVoltarLogin").addEventListener("click", () => mostrarTela("telaLogin"));
+
+document.getElementById("linkEsqueciSenha").addEventListener("click", async () => {
+  const email = document.getElementById("loginEmail").value.trim();
+  const erroEl = document.getElementById("loginErro");
+  if (!email) { erroEl.textContent = "Digite seu e-mail no campo acima e clique de novo."; return; }
+  try {
+    await auth.sendPasswordResetEmail(email);
+    erroEl.textContent = "Se esse e-mail tiver conta, o link para criar uma nova senha foi enviado.";
+  } catch (err) {
+    erroEl.textContent = "Não foi possível enviar. Confira o e-mail.";
+  }
+});
+
+document.getElementById("btnCadastrar").addEventListener("click", async () => {
+  const nome = document.getElementById("cadNome").value.trim();
+  const email = document.getElementById("cadEmail").value.trim();
+  const senha = document.getElementById("cadSenha").value;
+  const erroEl = document.getElementById("cadErro");
+  erroEl.textContent = "";
+  if (!nome || !email || senha.length < 6) { erroEl.textContent = "Preencha nome, e-mail e senha (mín. 6 caracteres)."; return; }
+  ignorarAuthChange = true;
+  try {
+    const cred = await auth.createUserWithEmailAndPassword(email, senha);
+    await db.ref("solicitacoes/" + cred.user.uid).set({ uid: cred.user.uid, nome, email, status: "pendente", criadoEm: new Date().toISOString() });
+    await auth.signOut();
+    ignorarAuthChange = false;
+    mostrarTela("telaLogin");
+    document.getElementById("loginErro").textContent = "Cadastro enviado! Assim que o administrador liberar, você já pode entrar.";
+  } catch (err) {
+    ignorarAuthChange = false;
+    if (auth.currentUser) await auth.signOut();
+    erroEl.textContent = err.code === "auth/email-already-in-use"
+      ? "Esse e-mail já tem conta. Volte e use Entrar (ou Esqueci minha senha)."
+      : "Não foi possível criar a conta: " + err.message;
+  }
+});
+
 document.getElementById("btnEntrar").addEventListener("click", fazerLogin);
 document.getElementById("loginSenha").addEventListener("keydown", e => { if (e.key === "Enter") fazerLogin(); });
 
@@ -658,9 +721,12 @@ async function fazerLogin() {
   const erroEl = document.getElementById("loginErro");
   erroEl.textContent = "";
   if (!email || !senha) { erroEl.textContent = "Informe e-mail e senha."; return; }
+  ignorarAuthChange = true;
   try {
     await auth.signInWithEmailAndPassword(email, senha);
+    location.reload();
   } catch (err) {
+    ignorarAuthChange = false;
     erroEl.textContent = "E-mail ou senha inválidos.";
   }
 }
@@ -692,6 +758,7 @@ document.getElementById("linkTrocarSenha").addEventListener("click", () => {
 });
 
 auth.onAuthStateChanged(async (user) => {
+  if (ignorarAuthChange) return;
   if (!user) {
     usuarioAtual = null;
     // só mostra login normal se já existir algum usuário no sistema
@@ -704,7 +771,8 @@ auth.onAuthStateChanged(async (user) => {
   const perfil = perfilSnap && perfilSnap.val();
   if (!perfil) {
     // autenticado no Firebase mas sem cadastro em usuarios/ (ex: acesso removido) — bloqueia
-    alert("Seu acesso foi removido. Fale com o administrador.");
+    await db.ref("solicitacoes/" + user.uid).set({ uid: user.uid, nome: (user.email || "").split("@")[0], email: user.email, status: "pendente", criadoEm: new Date().toISOString() }).catch(() => {});
+    alert("Seu acesso ainda não foi liberado. O administrador foi avisado — peça para ele aprovar na aba Funcionários.");
     auth.signOut();
     return;
   }
@@ -715,6 +783,7 @@ auth.onAuthStateChanged(async (user) => {
 
 function aplicarPermissoes() {
   document.getElementById("contaNome").textContent = usuarioAtual.nome;
+  if (usuarioAtual.role === "admin") { renderListaFuncionarios(); renderSolicitacoes(); }
   document.getElementById("contaRole").innerHTML = `<span class="badge-role">${ROLE_LABEL[usuarioAtual.role] || usuarioAtual.role}</span>`;
 
   document.querySelectorAll(".nav-item[data-view]").forEach(el => {
@@ -773,6 +842,49 @@ function renderListaFuncionarios() {
     if (confirm(`Remover o acesso de ${f.nome}? A conta de login continua existindo no Firebase, mas ela não vai mais conseguir entrar no painel.`)) {
       db.ref("usuarios/" + f.uid).remove();
     }
+  }));
+}
+
+function esc(s) {
+  return String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+let solicitacoes = {};
+db.ref("solicitacoes").on("value", (snap) => {
+  solicitacoes = snap.val() || {};
+  renderSolicitacoes();
+}, () => {});
+
+function renderSolicitacoes() {
+  const el = document.getElementById("listaSolicitacoes");
+  const tit = document.getElementById("tituloSolicitacoes");
+  if (!el || !usuarioAtual || usuarioAtual.role !== "admin") return;
+  const lista = Object.values(solicitacoes).filter(s => s.status === "pendente");
+  tit.style.display = lista.length ? "block" : "none";
+  el.style.display = lista.length ? "block" : "none";
+  el.innerHTML = lista.map(s => `
+    <div class="pedido-item" style="display:flex;justify-content:space-between;align-items:center;cursor:default;gap:8px;flex-wrap:wrap;">
+      <div><div class="topo"><span>${esc(s.nome)}</span></div><div class="cliente">${esc(s.email)}</div></div>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <select data-role="${esc(s.uid)}">
+          <option value="nivel3">Usuário (sem Relatórios)</option>
+          <option value="nivel2">Usuário (acesso total)</option>
+          <option value="admin">Administrador</option>
+        </select>
+        <button class="btn btn-primario" data-aprovar="${esc(s.uid)}" style="padding:6px 10px;font-size:12px;">Aprovar</button>
+        <button class="btn btn-secundario" data-recusar="${esc(s.uid)}" style="padding:6px 10px;font-size:12px;color:#c0392b;">Recusar</button>
+      </div>
+    </div>`).join("");
+
+  el.querySelectorAll("[data-aprovar]").forEach(btn => btn.addEventListener("click", async () => {
+    const uid = btn.dataset.aprovar;
+    const s = solicitacoes[uid];
+    const role = el.querySelector(`select[data-role="${uid}"]`).value;
+    await db.ref("usuarios/" + uid).set({ uid, nome: s.nome, email: s.email, role });
+    await db.ref("solicitacoes/" + uid).remove();
+  }));
+  el.querySelectorAll("[data-recusar]").forEach(btn => btn.addEventListener("click", () => {
+    db.ref("solicitacoes/" + btn.dataset.recusar).remove();
   }));
 }
 
