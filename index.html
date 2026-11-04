@@ -2665,7 +2665,7 @@ function renderPagamento() {
   const selecionada = FORMAS_PAGAMENTO.find(f => f.id === estado.formaPagamento);
   if (selecionada && selecionada.requer_link) {
     avisoPagamento.style.display = "block";
-    avisoPagamento.textContent = "Ao finalizar, um link de pagamento será gerado para você.";
+    avisoPagamento.textContent = "Ao finalizar, você envia o pedido pelo WhatsApp e a loja manda o link de pagamento do cartão.";
   } else {
     avisoPagamento.style.display = "none";
   }
@@ -3130,6 +3130,39 @@ function montarItensAcessorios() {
     });
 }
 
+function montarMensagemPedidoZap(pedido) {
+  const brl = v => "R$ " + (v || 0).toFixed(2).replace(".", ",");
+  const L = [];
+  L.push(`*NOVO PEDIDO ${pedido.id}* 💳 Pagamento no cartão`);
+  L.push("");
+  L.push(`*Cliente:* ${pedido.name}`);
+  L.push(`*Telefone:* ${pedido.phone}`);
+  L.push(pedido.delivery === "entrega"
+    ? `*Entrega:* ${pedido.addr} (${(pedido.deliveryKm || 0).toFixed(1)} km)`
+    : `*Retirada na loja*`);
+  L.push("");
+  L.push("*Itens:*");
+  (pedido.items || []).forEach(it => {
+    const c = it.config || {};
+    let l = `• ${it.productName}`;
+    if (c.width && c.height) l += ` — ${c.width} x ${c.height} mm (${c.thickness}mm)`;
+    if (it.qty > 1) l += ` × ${it.qty}`;
+    if (c.side) l += ` — porta à ${c.side}`;
+    if (c.beneficiamentos && c.beneficiamentos.length) {
+      l += ` — ${c.beneficiamentos.map(b => b.tipo === "fixo_un" ? `${b.nome} x${b.qtd}` : b.nome).join(", ")}`;
+    }
+    if (c.upgradeVidro) l += ` — vidro ${c.upgradeVidro.nome}`;
+    l += ` = ${brl(it.subtotal)}`;
+    L.push(l);
+  });
+  L.push("");
+  if (pedido.totals && pedido.totals.delivery > 0) L.push(`Frete: ${brl(pedido.totals.delivery)}`);
+  L.push(`*TOTAL: ${brl(pedido.totals.total)}*`);
+  L.push("");
+  L.push("Aguardo o link de pagamento do cartão. 🙏");
+  return L.join("\n");
+}
+
 async function finalizarPedido() {
   btnFinalizar.disabled = true;
   btnFinalizar.textContent = "Processando...";
@@ -3190,13 +3223,17 @@ async function finalizarPedido() {
       btnFinalizar.textContent = "Finalizar pedido";
       btnFinalizar.disabled = false;
 
-    } else if (estado.formaPagamento === "cartao") {
-      // SIMULAÇÃO DE LINK DE PAGAMENTO
-      msgStatus.className = "msg-status ok";
-      msgStatus.innerHTML = `✅ <strong>Link de pagamento gerado com sucesso!</strong><br>
-      (Simulação) Valor: R$ ${total.toFixed(2).replace(".", ",")}<br>
-      <small>Em um ambiente real, o cliente seria redirecionado para o gateway (Mercado Pago, etc).</small>`;
-      btnFinalizar.textContent = "Pedido Enviado ✓";
+} else if (estado.formaPagamento === "cartao") {
+  const urlZap = `https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(montarMensagemPedidoZap(pedido))}`;
+  msgStatus.className = "msg-status ok";
+  msgStatus.innerHTML = `✅ <strong>Pedido ${pedidoId} registrado!</strong><br>
+    Agora envie os dados pelo WhatsApp para receber o link de pagamento do cartão.<br>
+    <a href="${urlZap}" target="_blank" rel="noopener"
+       style="display:inline-block;margin-top:10px;background:#1B6B3C;color:#fff;padding:12px 18px;border-radius:8px;font-weight:700;text-decoration:none;">
+       💬 Enviar pedido no WhatsApp</a>`;
+  btnFinalizar.textContent = "Pedido Enviado ✓";
+  try { window.open(urlZap, "_blank"); } catch (e) {}
+}
       
       // Opcional: redirecionar para WhatsApp após 2 segundos
       setTimeout(() => {
