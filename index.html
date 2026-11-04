@@ -3164,98 +3164,87 @@ function montarMensagemPedidoZap(pedido) {
 }
 
 async function finalizarPedido() {
-  btnFinalizar.disabled = true;
-  btnFinalizar.textContent = "Processando...";
-  const { total } = calcularPreco();
-  const agora = new Date().toISOString();
-  const pedidoId = "PED-" + Date.now().toString(36).toUpperCase();
-  const subtotalSemFrete = total - (estado.formaEntrega === "entrega" ? estado.entregaValor : 0);
-  const itensFinal = [...estado.carrinho.filter(it => it.selecionado), ...montarItensAcessorios()];
-  const prazo = calcularPrazoProducao(itensFinal);
-
-  const pedido = {
-    id: pedidoId,
-    date: agora,
-    name: estado.cliente.nome.trim(),
-    phone: estado.cliente.telefone.trim(),
-    addr: estado.formaEntrega === "entrega" ? estado.cliente.endereco.trim() : "",
-    doc: "", email: "", cep: "", num: "", bairro: "", city: "",
-    complemento: "", reference: "", pref_date: "",
-    obs: "",
-    delivery: estado.formaEntrega === "entrega" ? "entrega" : "retirada",
-    deliveryKm: estado.formaEntrega === "entrega" ? estado.entregaKm : 0,
-    payment: estado.formaPagamento,
-    items: itensFinal,
-    prazoEstimado: prazo,
-    totals: { subtotal: subtotalSemFrete, volumeDiscount: 0, delivery: estado.formaEntrega === "entrega" ? estado.entregaValor : 0, total: total },
-    status: "recebido",
-    statusHistory: [{ status: "recebido", at: agora }],
-    payMethod: estado.formaPagamento,
-    payStatus: estado.formaPagamento === "dinheiro" ? "pagar_no_local" : "aguardando",
-    isPro: false,
-    customerId: ""
-  };
-  localStorage.setItem("dfa_ultimo_telefone", pedido.phone);
-  try {
-    await db.ref("pedidos/" + pedido.id).set(JSON.parse(JSON.stringify(pedido)));
-
-    if (estado.formaPagamento === "pix") {
-      // GERA PAYLOAD PIX
-      const txid = "DFA" + Date.now().toString().slice(-6);
-      const payloadPix = gerarPayloadPix(DADOS_PIX.chave, DADOS_PIX.nome, DADOS_PIX.cidade, total, txid);
-      
-      // Exibe Modal
-      document.getElementById("modalPixValor").textContent = "R$ " + total.toFixed(2).replace(".", ",");
-      document.getElementById("pixCopiaCola").value = payloadPix;
-      
-      // Gera QR Code
-      document.getElementById("qrcode").innerHTML = "";
-      new QRCode(document.getElementById("qrcode"), {
-        text: payloadPix,
-        width: 200,
-        height: 200,
-        colorDark: "#14512D",
-        colorLight: "#ffffff",
-        correctLevel: QRCode.CorrectLevel.M
-      });
-
-      document.getElementById("modalPix").classList.add("ativo");
-      btnFinalizar.textContent = "Finalizar pedido";
-      btnFinalizar.disabled = false;
-
-} else if (estado.formaPagamento === "cartao") {
-  const urlZap = `https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(montarMensagemPedidoZap(pedido))}`;
-  msgStatus.className = "msg-status ok";
-  msgStatus.innerHTML = `✅ <strong>Pedido ${pedidoId} registrado!</strong><br>
-    Agora envie os dados pelo WhatsApp para receber o link de pagamento do cartão.<br>
-    <a href="${urlZap}" target="_blank" rel="noopener"
-       style="display:inline-block;margin-top:10px;background:#1B6B3C;color:#fff;padding:12px 18px;border-radius:8px;font-weight:700;text-decoration:none;">
-       💬 Enviar pedido no WhatsApp</a>`;
-  btnFinalizar.textContent = "Pedido Enviado ✓";
-  try { window.open(urlZap, "_blank"); } catch (e) {}
-}
-      
-      // Opcional: redirecionar para WhatsApp após 2 segundos
-      setTimeout(() => {
-        const msgZap = `Olá! Acabei de fazer o pedido *${pedidoId}* no site. Valor: R$ ${total.toFixed(2).replace(".", ",")}. Aguardo o link de pagamento.`;
-        window.open(`https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(msgZap)}`, '_blank');
-      }, 2500);
-
-    } else {
-      msgStatus.className = "msg-status ok";
-      msgStatus.textContent = "Pedido enviado com sucesso! Nº " + pedidoId;
-      btnFinalizar.textContent = "Pedido Enviado ✓";
+    btnFinalizar.disabled = true;
+    btnFinalizar.textContent = "Processando...";
+    const { total } = calcularPreco();
+    const agora = new Date().toISOString();
+    const pedidoId = "PED-" + Date.now().toString(36).toUpperCase();
+    const subtotalSemFrete = total - (estado.formaEntrega === "entrega" ? estado.entregaValor : 0);
+    const itensFinal = [...estado.carrinho.filter(it => it.selecionado), ...montarItensAcessorios()];
+    const prazo = calcularPrazoProducao(itensFinal);
+    const pedido = {
+        id: pedidoId,
+        date: agora,
+        name: estado.cliente.nome.trim(),
+        phone: estado.cliente.telefone.trim(),
+        addr: estado.formaEntrega === "entrega" ? estado.cliente.endereco.trim() : "",
+        doc: "", email: "", cep: "", num: "", bairro: "", city: "",
+        complemento: "", reference: "", pref_date: "",
+        obs: "",
+        delivery: estado.formaEntrega === "entrega" ? "entrega" : "retirada",
+        deliveryKm: estado.formaEntrega === "entrega" ? estado.entregaKm : 0,
+        payment: estado.formaPagamento,
+        items: itensFinal,
+        prazoEstimado: prazo,
+        totals: { subtotal: subtotalSemFrete, volumeDiscount: 0, delivery: estado.formaEntrega === "entrega" ? estado.entregaValor : 0, total: total },
+        status: "recebido",
+        statusHistory: [{ status: "recebido", at: agora }],
+        payMethod: estado.formaPagamento,
+        payStatus: estado.formaPagamento === "dinheiro" ? "pagar_no_local" : "aguardando",
+        isPro: false,
+        customerId: ""
+    };
+    localStorage.setItem("dfa_ultimo_telefone", pedido.phone);
+    try {
+        await db.ref("pedidos/" + pedido.id).set(JSON.parse(JSON.stringify(pedido)));
+        if (estado.formaPagamento === "pix") {
+            // GERA PAYLOAD PIX
+            const txid = "DFA" + Date.now().toString().slice(-6);
+            const payloadPix = gerarPayloadPix(DADOS_PIX.chave, DADOS_PIX.nome, DADOS_PIX.cidade, total, txid);
+            // Exibe Modal
+            document.getElementById("modalPixValor").textContent = "R$ " + total.toFixed(2).replace(".", ",");
+            document.getElementById("pixCopiaCola").value = payloadPix;
+            // Gera QR Code
+            document.getElementById("qrcode").innerHTML = "";
+            new QRCode(document.getElementById("qrcode"), {
+                text: payloadPix,
+                width: 200,
+                height: 200,
+                colorDark: "#14512D",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.M
+            });
+            document.getElementById("modalPix").classList.add("ativo");
+            btnFinalizar.textContent = "Finalizar pedido";
+            btnFinalizar.disabled = false;
+        } else if (estado.formaPagamento === "cartao") {
+            const urlZap = `https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(montarMensagemPedidoZap(pedido))}`;
+            msgStatus.className = "msg-status ok";
+            msgStatus.innerHTML = `✅ <strong>Pedido ${pedidoId} registrado!</strong><br>
+Agora envie os dados pelo WhatsApp para receber o link de pagamento do cartão.<br>
+<a href="${urlZap}" target="_blank" rel="noopener"
+style="display:inline-block;margin-top:10px;background:#1B6B3C;color:#fff;padding:12px 18px;border-radius:8px;font-weight:700;text-decoration:none;">
+💬 Enviar pedido no WhatsApp</a>`;
+            btnFinalizar.textContent = "Pedido Enviado ✓";
+            try { window.open(urlZap, "_blank"); } catch (e) {}
+            // Opcional: redirecionar para WhatsApp após 2 segundos
+            setTimeout(() => {
+                const msgZap = `Olá! Acabei de fazer o pedido *${pedidoId}* no site. Valor: R$ ${total.toFixed(2).replace(".", ",")}. Aguardo o link de pagamento.`;
+                window.open(`https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(msgZap)}`, '_blank');
+            }, 2500);
+        } else {
+            msgStatus.className = "msg-status ok";
+            msgStatus.textContent = "Pedido enviado com sucesso! Nº " + pedidoId;
+            btnFinalizar.textContent = "Pedido Enviado ✓";
+        }
+        resetarAposFinalizarPedido();
+    } catch (err) {
+        msgStatus.className = "msg-status erro";
+        msgStatus.textContent = "Não foi possível enviar o pedido (" + (err && err.message ? err.message.slice(0, 140) : "erro desconhecido") + "). Tente de novo ou fale no WhatsApp.";
+        btnFinalizar.disabled = false;
+        btnFinalizar.textContent = "Finalizar pedido";
+        console.error(err);
     }
-
-    resetarAposFinalizarPedido();
-
-  } catch (err) {
-    msgStatus.className = "msg-status erro";
-    msgStatus.textContent = "Não foi possível enviar o pedido (" + (err && err.message ? err.message.slice(0, 140) : "erro desconhecido") + "). Tente de novo ou fale no WhatsApp.";
-    btnFinalizar.disabled = false;
-    btnFinalizar.textContent = "Finalizar pedido";
-    console.error(err);
-  }
 }
 
 btnFinalizar.addEventListener("click", finalizarPedido);
